@@ -36,23 +36,19 @@ pnpm dev
 
 ### Configuration
 
-Edit `src/config/index.ts` to match your OvenMediaEngine setup:
+For local development, edit `.env.development` to configure your OvenMediaEngine connection:
 
-```typescript
-export const config = {
-  api: {
-    baseUrl: 'http://your-ome-server:8081',
-    accessToken: 'your-access-token',
-  },
-  ome: {
-    vhost: 'default',
-    app: 'app',
-    webrtcUrl: 'ws://your-ome-server:3333',
-    rtmpUrl: 'rtmp://your-ome-server:1935',
-    srtUrl: 'srt://your-ome-server:9999',
-  },
-}
+```env
+VITE_API_BASE_URL=http://your-ome-server:8081
+VITE_API_ACCESS_TOKEN=your-access-token
+VITE_WEBRTC_URL=ws://your-ome-server:3333
+VITE_RTMP_URL=rtmp://your-ome-server:1935
+VITE_SRT_URL=srt://your-ome-server:9999
+VITE_OME_VHOST=default
+VITE_OME_APP=app
 ```
+
+For production Docker deployment, use environment variables (see Docker Deployment section below).
 
 ## Usage
 
@@ -80,17 +76,53 @@ pnpm preview
 
 ## Docker Deployment
 
-Build and run with Docker:
+Build and run with Docker Compose. Configuration is injected at runtime via environment variables.
+
+Create a `docker-compose.yml`:
+
+```yaml
+services:
+  devestreaming:
+    build: .
+    container_name: devestreaming
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      # OvenMediaEngine Configuration
+      - OME_API_URL=http://10.88.28.212:8081
+      - OME_API_TOKEN=ome-access-token
+      - OME_WEBRTC_URL=ws://10.88.28.212:3333
+      - OME_RTMP_URL=rtmp://10.88.28.212:1935
+      - OME_SRT_URL=srt://10.88.28.212:9999
+      - OME_VHOST=default
+      - OME_APP=app
+      # Basic Authentication
+      - BASIC_AUTH_USERNAME=admin
+      - BASIC_AUTH_PASSWORD=secure-password
+```
+
+Then run:
 
 ```bash
-# Build image
-docker build -t devestreaming .
-
-# Run container
-docker run -d -p 8080:80 devestreaming
+docker-compose up -d
 ```
 
 The application will be available at `http://localhost:8080`
+
+### Available Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OME_API_URL` | OvenMediaEngine API URL | `http://10.88.28.212:8081` |
+| `OME_API_TOKEN` | OME API access token | `ome-access-token` |
+| `OME_WEBRTC_URL` | WebRTC signaling URL | `ws://10.88.28.212:3333` |
+| `OME_RTMP_URL` | RTMP server URL | `rtmp://10.88.28.212:1935` |
+| `OME_SRT_URL` | SRT server URL | `srt://10.88.28.212:9999` |
+| `OME_VHOST` | Default virtual host | `default` |
+| `OME_APP` | Default application name | `app` |
+| `BASIC_AUTH_USERNAME` | HTTP basic auth username | `admin` |
+| `BASIC_AUTH_PASSWORD` | HTTP basic auth password | `changeme` |
 
 ## License
 
