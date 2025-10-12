@@ -1,20 +1,31 @@
 <template>
   <v-card elevation="2">
-    <v-card-title class="d-flex align-center">
-      <v-icon icon="mdi-chart-line" class="mr-2" color="primary"></v-icon>
-      Stream Statistics
+    <v-card-title class="d-flex align-center justify-space-between">
+      <div class="d-flex align-center">
+        <v-icon icon="mdi-chart-line" class="mr-2" color="primary"></v-icon>
+        Stream Statistics
+      </div>
+      <v-btn
+        v-if="stats"
+        icon="mdi-refresh"
+        size="small"
+        variant="text"
+        :loading="loading"
+        @click="handleRefresh"
+      ></v-btn>
     </v-card-title>
 
     <v-divider></v-divider>
 
     <v-card-text>
-      <!-- Loading state -->
-      <div v-if="loading" class="text-center pa-4">
+      <!-- Loading state - only show when there's NO data yet -->
+      <div v-if="!stats" class="text-center pa-4">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
+        <p class="text-body-2 text-grey mt-2">Loading statistics...</p>
       </div>
 
-      <!-- Stats display -->
-      <div v-else-if="stats" class="stats-grid">
+      <!-- Stats display - show even while refreshing -->
+      <div v-else class="stats-grid">
         <!-- Viewer count -->
         <v-card variant="tonal" class="stat-card">
           <v-card-text class="text-center">
@@ -102,8 +113,8 @@
         </v-card>
       </div>
 
-      <!-- Error state -->
-      <div v-else class="text-center pa-4">
+      <!-- Error/Empty state -->
+      <div v-if="!stats" class="text-center pa-4">
         <v-icon icon="mdi-alert-circle" size="large" color="grey"></v-icon>
         <p class="text-body-2 text-grey mt-2">No statistics available</p>
       </div>
@@ -113,9 +124,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useStreamStore } from '@/stores/streams'
 import { type StreamStats } from '@/services/api/types'
 
 interface Props {
+  streamName: string
   stats: StreamStats | null
   loading?: boolean
 }
@@ -123,6 +136,12 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
 })
+
+const streamStore = useStreamStore()
+
+async function handleRefresh() {
+  await streamStore.fetchStreamStats(props.streamName)
+}
 
 const totalViewers = computed(() => {
   if (!props.stats) return 0

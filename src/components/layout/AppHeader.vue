@@ -4,7 +4,7 @@
       <router-link to="/" style="text-decoration: none; color: inherit;">
         <div class="d-flex align-center">
           <v-icon icon="mdi-video-wireless" size="large" class="mr-2" color="primary"></v-icon>
-          <span class="text-h6 font-weight-bold">Deve Streaming</span>
+          <span class="text-h6 font-weight-bold">Deve Streaming Platform</span>
         </div>
       </router-link>
     </v-app-bar-title>

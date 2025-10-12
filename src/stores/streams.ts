@@ -63,7 +63,7 @@ export const useStreamStore = defineStore('streams', () => {
         activeStreamStats.value = statsResponse.response
         
         // Update the stream in the list
-        const stream = streams.value.find(s => s.name === streamName)
+        const stream = streams.value.find((s: StreamInfo) => s.name === streamName)
         if (stream) {
           stream.stats = statsResponse.response
           stream.viewerCount = calculateViewerCount(statsResponse.response)
@@ -96,8 +96,11 @@ export const useStreamStore = defineStore('streams', () => {
     if (pollInterval) return
     
     pollInterval = window.setInterval(() => {
-      fetchStreams()
-      if (activeStreamName.value) {
+      // Only fetch streams list on home page, not when viewing a stream
+      if (!activeStreamName.value) {
+        fetchStreams()
+      } else {
+        // When viewing a stream, only update that stream's stats
         fetchStreamStats(activeStreamName.value)
       }
     }, intervalMs)

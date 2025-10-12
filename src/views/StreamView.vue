@@ -38,7 +38,11 @@
 
       <!-- Stats sidebar -->
       <v-col cols="12" lg="4">
-        <StreamStats :stats="stats" :loading="statsLoading" />
+        <StreamStats 
+          :stream-name="streamName"
+          :stats="stats" 
+          :loading="statsLoading"
+        />
       </v-col>
     </v-row>
   </v-container>

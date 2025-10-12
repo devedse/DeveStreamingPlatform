@@ -12,16 +12,13 @@
         </p>
       </div>
       
-      <div class="d-flex gap-2">
+      <div class="d-flex gap-2 align-center">
         <v-btn
+          icon="mdi-refresh"
+          variant="text"
           :loading="loading"
-          color="primary"
-          size="large"
           @click="refreshStreams"
-        >
-          <v-icon icon="mdi-refresh" start></v-icon>
-          Refresh
-        </v-btn>
+        ></v-btn>
         <AddStreamDialog />
       </div>
     </div>
