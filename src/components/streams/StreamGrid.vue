@@ -13,7 +13,7 @@
       </v-col>
 
       <!-- Empty state -->
-      <v-col v-if="streams.length === 0 && !loading" cols="12">
+      <v-col v-if="streams.length === 0" cols="12">
         <v-card class="text-center pa-8" elevation="0">
           <v-icon icon="mdi-video-off" size="64" color="grey"></v-icon>
           <h2 class="text-h5 mt-4 mb-2">No Live Streams</h2>
@@ -21,18 +21,6 @@
             No streams are currently live. Start streaming to see them here!
           </p>
         </v-card>
-      </v-col>
-
-      <!-- Loading state -->
-      <v-col v-if="loading" cols="12">
-        <div class="text-center pa-8">
-          <v-progress-circular
-            indeterminate
-            color="primary"
-            size="64"
-          ></v-progress-circular>
-          <p class="text-body-1 mt-4">Loading streams...</p>
-        </div>
       </v-col>
     </v-row>
   </v-container>

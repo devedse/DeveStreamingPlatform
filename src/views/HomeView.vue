@@ -12,20 +12,18 @@
         </p>
       </div>
       
-      <AddStreamDialog />
-    </div>
-
-    <!-- Refresh button -->
-    <div class="mb-4">
-      <v-btn
-        :loading="loading"
-        color="primary"
-        variant="outlined"
-        @click="refreshStreams"
-      >
-        <v-icon icon="mdi-refresh" start></v-icon>
-        Refresh
-      </v-btn>
+      <div class="d-flex gap-2">
+        <v-btn
+          :loading="loading"
+          color="primary"
+          size="large"
+          @click="refreshStreams"
+        >
+          <v-icon icon="mdi-refresh" start></v-icon>
+          Refresh
+        </v-btn>
+        <AddStreamDialog />
+      </div>
     </div>
 
     <!-- Stream grid -->
