@@ -1,50 +1,47 @@
 <template>
-  <div class="stream-view">
-    <v-container fluid class="px-6 py-6">
-      <!-- Back button -->
-      <div class="mb-6">
-        <v-btn
-          variant="text"
-          size="large"
-          @click="router.push('/')"
-        >
-          <v-icon icon="mdi-arrow-left" start></v-icon>
-          Back to Streams
-        </v-btn>
+  <v-container fluid class="pa-4">
+    <!-- Back button -->
+    <div class="mb-4">
+      <v-btn
+        variant="text"
+        @click="router.push('/')"
+      >
+        <v-icon icon="mdi-arrow-left" start></v-icon>
+        Back to Streams
+      </v-btn>
+    </div>
+
+    <!-- Stream header -->
+    <div class="mb-4">
+      <div class="d-flex align-center mb-2">
+        <v-chip color="error" size="small" class="mr-2">
+          <v-icon icon="mdi-circle" size="x-small" class="mr-1"></v-icon>
+          LIVE
+        </v-chip>
+        <h1 class="text-h4 font-weight-bold">{{ streamName }}</h1>
       </div>
+      <p class="text-body-2 text-grey">
+        Streaming via WebRTC with sub-second latency
+      </p>
+    </div>
 
-      <!-- Stream header -->
-      <div class="mb-6">
-        <div class="d-flex align-center mb-3">
-          <v-chip color="error" size="default" class="mr-3">
-            <v-icon icon="mdi-circle" size="small" class="mr-1"></v-icon>
-            LIVE
-          </v-chip>
-          <h1 class="text-h3 font-weight-bold">{{ streamName }}</h1>
-        </div>
-        <p class="text-h6 text-medium-emphasis">
-          Streaming via WebRTC with sub-second latency
-        </p>
-      </div>
+    <!-- Player section -->
+    <v-row>
+      <v-col cols="12" lg="8">
+        <v-card elevation="2">
+          <OvenPlayerComponent
+            :stream-url="playbackUrl"
+            :autoplay="true"
+          />
+        </v-card>
+      </v-col>
 
-      <!-- Player section -->
-      <v-row>
-        <v-col cols="12" lg="8">
-          <v-card elevation="0" border>
-            <OvenPlayerComponent
-              :stream-url="playbackUrl"
-              :autoplay="true"
-            />
-          </v-card>
-        </v-col>
-
-        <!-- Stats sidebar -->
-        <v-col cols="12" lg="4">
-          <StreamStats :stats="stats" :loading="statsLoading" />
-        </v-col>
-      </v-row>
-    </v-container>
-  </div>
+      <!-- Stats sidebar -->
+      <v-col cols="12" lg="4">
+        <StreamStats :stats="stats" :loading="statsLoading" />
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script setup lang="ts">

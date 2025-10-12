@@ -1,53 +1,47 @@
 <template>
-  <v-container fluid class="pa-6 fill-height">
+  <v-container fluid class="pa-4">
     <!-- Page header -->
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex justify-space-between align-center flex-wrap mb-6">
-          <div>
-            <h1 class="text-h3 font-weight-bold mb-2">
-              <v-icon icon="mdi-television-play" color="primary" size="40" class="mr-3"></v-icon>
-              Live Streams
-            </h1>
-            <p class="text-h6 text-medium-emphasis">
-              Browse and watch live streams
-            </p>
-          </div>
-          
-          <div class="d-flex ga-3">
-            <v-btn
-              :loading="loading"
-              color="primary"
-              variant="tonal"
-              size="large"
-              @click="refreshStreams"
-            >
-              <v-icon icon="mdi-refresh" start></v-icon>
-              Refresh
-            </v-btn>
-            
-            <AddStreamDialog />
-          </div>
-        </div>
-      </v-col>
-    </v-row>
+    <div class="d-flex justify-space-between align-center mb-6">
+      <div>
+        <h1 class="text-h4 font-weight-bold mb-2">
+          <v-icon icon="mdi-television-play" color="primary" class="mr-2"></v-icon>
+          Live Streams
+        </h1>
+        <p class="text-body-1 text-grey">
+          Browse and watch live streams
+        </p>
+      </div>
+      
+      <AddStreamDialog />
+    </div>
+
+    <!-- Refresh button -->
+    <div class="mb-4">
+      <v-btn
+        :loading="loading"
+        color="primary"
+        variant="outlined"
+        @click="refreshStreams"
+      >
+        <v-icon icon="mdi-refresh" start></v-icon>
+        Refresh
+      </v-btn>
+    </div>
 
     <!-- Stream grid -->
-    <StreamGrid :streams="streams" />
+    <StreamGrid :streams="streams" :loading="loading" />
 
     <!-- Error message -->
-    <v-row v-if="error">
-      <v-col cols="12">
-        <v-alert
-          type="error"
-          variant="tonal"
-          closable
-          @click:close="error = null"
-        >
-          {{ error }}
-        </v-alert>
-      </v-col>
-    </v-row>
+    <v-alert
+      v-if="error"
+      type="error"
+      variant="tonal"
+      class="mt-4"
+      closable
+      @click:close="error = null"
+    >
+      {{ error }}
+    </v-alert>
   </v-container>
 </template>
 
