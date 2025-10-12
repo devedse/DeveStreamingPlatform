@@ -54,7 +54,7 @@ function initPlayer() {
       muted: false,
       volume: 50,
       showBigPlayButton: true,
-      aspectRatio: '21:9', // 3440x1440 ultrawide
+      aspectRatio: 'auto',
       waterMark: {
         image: '',
         position: 'bottom-right',
