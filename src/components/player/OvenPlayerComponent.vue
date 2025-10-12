@@ -54,7 +54,7 @@ function initPlayer() {
       muted: false,
       volume: 50,
       showBigPlayButton: true,
-      aspectRatio: '16:9',
+      aspectRatio: '21:9', // 3440x1440 ultrawide
       waterMark: {
         image: '',
         position: 'bottom-right',
@@ -104,14 +104,21 @@ defineExpose({
 <style scoped>
 .oven-player-wrapper {
   width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   background: #000;
   border-radius: 4px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .oven-player-container {
   width: 100%;
   height: 100%;
-  min-height: 400px;
+  max-width: 100%;
+  max-height: 100%;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-6">
+  <v-container fluid class="pa-6" style="max-width: 100%;">
     <!-- Page header -->
     <div class="d-flex justify-space-between align-center mb-6">
       <div>

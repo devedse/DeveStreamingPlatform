@@ -1,51 +1,45 @@
 <template>
-  <v-container fluid class="pa-4">
-    <!-- Back button -->
-    <div class="mb-4">
+  <div class="stream-view-container">
+    <!-- Compact header -->
+    <div class="stream-header">
       <v-btn
         variant="text"
+        size="small"
         @click="router.push('/')"
+        class="back-btn"
       >
         <v-icon icon="mdi-arrow-left" start></v-icon>
-        Back to Streams
+        Back
       </v-btn>
-    </div>
-
-    <!-- Stream header -->
-    <div class="mb-4">
-      <div class="d-flex align-center mb-2">
-        <v-chip color="error" size="small" class="mr-2">
+      <div class="stream-title">
+        <v-chip color="error" size="small" class="live-badge">
           <v-icon icon="mdi-circle" size="x-small" class="mr-1"></v-icon>
           LIVE
         </v-chip>
-        <h1 class="text-h4 font-weight-bold">{{ streamName }}</h1>
+        <h1 class="text-h6">{{ streamName }}</h1>
       </div>
-      <p class="text-body-2 text-grey">
-        Streaming via WebRTC with sub-second latency
-      </p>
     </div>
 
-    <!-- Player section -->
-    <v-row>
-      <v-col cols="12" lg="8">
-        <v-card elevation="2">
+    <!-- Main content grid -->
+    <div class="stream-content">
+      <div class="player-wrapper">
+        <v-card elevation="2" class="player-card">
           <OvenPlayerComponent
             :stream-url="playbackUrl"
             :autoplay="true"
           />
         </v-card>
-      </v-col>
+      </div>
 
-      <!-- Stats sidebar -->
-      <v-col cols="12" lg="4">
+      <div class="stats-wrapper">
         <StreamStats 
           :stream-name="streamName"
           :stats="stats" 
           :loading="statsLoading"
         />
-      </v-col>
-    </v-row>
-  </v-container>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -79,3 +73,109 @@ onBeforeUnmount(() => {
   streamStore.stopPolling()
 })
 </script>
+
+<style scoped>
+.stream-view-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px); /* Full viewport minus AppHeader */
+  overflow: hidden;
+}
+
+.stream-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.stream-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stream-title h1 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.live-badge {
+  margin-right: 0;
+}
+
+.stream-content {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+  padding: 16px;
+  flex: 1;
+  min-height: 0; /* Important for nested scrolling */
+  overflow: hidden;
+}
+
+/* Player wrapper - contains and centers the player */
+.player-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.player-card {
+  /* Constrain to container - will scale down in both directions */
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-card :deep(.oven-player-wrapper) {
+  /* Ensure OvenPlayer wrapper also respects max dimensions */
+  max-width: 100%;
+  max-height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+/* Stats sidebar - scrollable */
+.stats-wrapper {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+/* Responsive breakpoints - like Twitch */
+@media (max-width: 1280px) {
+  .stream-content {
+    grid-template-columns: 1fr 340px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .stream-content {
+    grid-template-columns: 1fr 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stream-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  
+  .stats-wrapper {
+    max-height: 400px;
+  }
+}
+</style>

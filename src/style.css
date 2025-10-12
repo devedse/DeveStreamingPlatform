@@ -26,6 +26,16 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Ensure full-width dark background */
+#app,
+.v-application,
+.v-application__wrap {
+  background-color: #0a0a0a !important;
+  width: 100%;
+  max-width: 100%;
 }
 
 h1 {
@@ -54,13 +64,6 @@ button:focus-visible {
 
 .card {
   padding: 2em;
-}
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
 }
 
 @media (prefers-color-scheme: light) {
