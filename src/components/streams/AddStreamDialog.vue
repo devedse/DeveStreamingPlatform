@@ -79,6 +79,25 @@
             </div>
             <v-text-field
               :model-value="urls.rtmp"
+              label="Server URL"
+              readonly
+              density="compact"
+              variant="outlined"
+              hide-details
+              class="mb-2"
+            >
+              <template #append-inner>
+                <v-btn
+                  icon="mdi-content-copy"
+                  size="small"
+                  variant="text"
+                  @click="copyToClipboard(urls.rtmp, 'RTMP Server URL')"
+                ></v-btn>
+              </template>
+            </v-text-field>
+            <v-text-field
+              :model-value="urls.rtmpStreamKey"
+              label="Stream Key"
               readonly
               density="compact"
               variant="outlined"
@@ -89,17 +108,17 @@
                   icon="mdi-content-copy"
                   size="small"
                   variant="text"
-                  @click="copyToClipboard(urls.rtmp, 'RTMP')"
+                  @click="copyToClipboard(urls.rtmpStreamKey, 'Stream Key')"
                 ></v-btn>
               </template>
             </v-text-field>
           </div>
 
-          <!-- WebRTC URL -->
+          <!-- WebRTC URL (Ingest) -->
           <div class="url-section mb-3">
             <div class="d-flex align-center mb-2">
-              <v-chip size="small" color="info" variant="flat" class="mr-2">WebRTC</v-chip>
-              <span class="text-caption text-grey">For playback (lowest latency)</span>
+              <v-chip size="small" color="info" variant="flat" class="mr-2">WebRTC Ingest</v-chip>
+              <span class="text-caption text-grey">Self-defined signaling protocol</span>
             </div>
             <v-text-field
               :model-value="urls.webrtc"
@@ -113,20 +132,20 @@
                   icon="mdi-content-copy"
                   size="small"
                   variant="text"
-                  @click="copyToClipboard(urls.webrtc, 'WebRTC')"
+                  @click="copyToClipboard(urls.webrtc, 'WebRTC Ingest')"
                 ></v-btn>
               </template>
             </v-text-field>
           </div>
 
-          <!-- MPEG-TS URL -->
-          <div class="url-section">
+          <!-- WHIP URL -->
+          <div class="url-section mb-3">
             <div class="d-flex align-center mb-2">
-              <v-chip size="small" color="warning" variant="flat" class="mr-2">MPEG-TS/UDP</v-chip>
-              <span class="text-caption text-grey">UDP streaming</span>
+              <v-chip size="small" color="success" variant="flat" class="mr-2">WHIP</v-chip>
+              <span class="text-caption text-grey">WebRTC HTTP Ingest Protocol</span>
             </div>
             <v-text-field
-              :model-value="urls.mpegts"
+              :model-value="urls.whip"
               readonly
               density="compact"
               variant="outlined"
@@ -137,7 +156,7 @@
                   icon="mdi-content-copy"
                   size="small"
                   variant="text"
-                  @click="copyToClipboard(urls.mpegts, 'MPEG-TS')"
+                  @click="copyToClipboard(urls.whip, 'WHIP')"
                 ></v-btn>
               </template>
             </v-text-field>

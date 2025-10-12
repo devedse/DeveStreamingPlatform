@@ -40,8 +40,9 @@ export interface StreamConnections {
 export interface StreamUrls {
   srt: string
   rtmp: string
+  rtmpStreamKey: string
   webrtc: string
-  mpegts: string
+  whip: string
 }
 
 // Stream Info (for UI)

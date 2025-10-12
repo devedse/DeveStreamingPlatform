@@ -11,11 +11,22 @@ export const endpoints = {
 
 // Generate streaming URLs for a given stream name
 export const generateStreamUrls = (streamName: string) => {
+  // Extract host and port from URLs
+  const srtHost = config.ome.srtUrl.replace('srt://', '')
+  
   return {
-    srt: `${config.ome.srtUrl}?streamid=srt://${config.ome.srtUrl.replace('srt://', '')}/${config.ome.app}/${streamName}`,
-    rtmp: `${config.ome.rtmpUrl}/${config.ome.app}/${streamName}`,
-    webrtc: `${config.ome.webrtcUrl}/${config.ome.app}/${streamName}`,
-    mpegts: config.ome.mpegtsUrl,
+    // SRT: srt://host:port?streamid=default/app/streamname
+    srt: `srt://${srtHost}?streamid=${config.ome.vhost}/${config.ome.app}/${streamName}`,
+    
+    // RTMP: rtmp://host:port/app/ (stream key is separate)
+    rtmp: `${config.ome.rtmpUrl}/${config.ome.app}/`,
+    rtmpStreamKey: streamName,
+    
+    // WebRTC/WHIP: ws://host:port/app/streamname?direction=send (self-defined signaling)
+    webrtc: `${config.ome.webrtcUrl}/${config.ome.app}/${streamName}?direction=send`,
+    
+    // WHIP: http(s)://host:port/app/streamname?direction=whip
+    whip: `${config.ome.webrtcUrl.replace(/^ws/, 'http')}/${config.ome.app}/${streamName}?direction=whip`,
   }
 }
 
