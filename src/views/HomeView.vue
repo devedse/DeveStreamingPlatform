@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid class="pa-4">
+  <v-container fluid class="pa-6">
     <!-- Page header -->
     <div class="d-flex justify-space-between align-center mb-6">
       <div>

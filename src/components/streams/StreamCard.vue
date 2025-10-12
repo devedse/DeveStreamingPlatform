@@ -2,7 +2,8 @@
   <v-card
     class="stream-card"
     hover
-    elevation="2"
+    elevation="4"
+    rounded="lg"
     @click="goToStream"
   >
     <v-img
