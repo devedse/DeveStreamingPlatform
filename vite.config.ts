@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const apiTarget = env.VITE_API_BASE_URL
   
-  if (!apiTarget) {
+  // Only require VITE_API_BASE_URL in development mode (for proxy)
+  if (mode === 'development' && !apiTarget) {
     console.error('❌ ERROR: VITE_API_BASE_URL is required in .env.development')
     process.exit(1)
   }
@@ -24,14 +25,16 @@ export default defineConfig(({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       }
     },
-    server: {
-      proxy: {
-        '/omeapi': {
-          target: apiTarget,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/omeapi/, ''),
+    ...(mode === 'development' && {
+      server: {
+        proxy: {
+          '/omeapi': {
+            target: apiTarget,
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/omeapi/, ''),
+          }
         }
       }
-    }
+    })
   }
 })
