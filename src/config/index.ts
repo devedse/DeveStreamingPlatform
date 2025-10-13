@@ -4,10 +4,13 @@ declare global {
     ENV_CONFIG?: {
       OME_VHOST?: string
       OME_APP?: string
-      OME_WEBRTC_URL?: string
-      OME_RTMP_URL?: string
-      OME_SRT_URL?: string
-      OME_LLHLS_URL?: string
+      // Provider URLs (for ingestion/pushing streams)
+      OME_PROVIDER_WEBRTC_URL?: string
+      OME_PROVIDER_RTMP_URL?: string
+      OME_PROVIDER_SRT_URL?: string
+      // Publisher URLs (for playback)
+      OME_PUBLISHER_WEBRTC_URL?: string
+      OME_PUBLISHER_LLHLS_URL?: string
     }
   }
 }
@@ -26,9 +29,16 @@ export const config = {
   ome: {
     vhost: getEnv('OME_VHOST', 'VITE_OME_VHOST') || 'default',
     app: getEnv('OME_APP', 'VITE_OME_APP') || 'app',
-    webrtcUrl: getEnv('OME_WEBRTC_URL', 'VITE_WEBRTC_URL'),
-    rtmpUrl: getEnv('OME_RTMP_URL', 'VITE_RTMP_URL'),
-    srtUrl: getEnv('OME_SRT_URL', 'VITE_SRT_URL'),
-    llhlsUrl: getEnv('OME_LLHLS_URL', 'VITE_LLHLS_URL'),
+    // Provider URLs (for stream ingestion)
+    providers: {
+      webrtcUrl: getEnv('OME_PROVIDER_WEBRTC_URL', 'VITE_PROVIDER_WEBRTC_URL'),
+      rtmpUrl: getEnv('OME_PROVIDER_RTMP_URL', 'VITE_PROVIDER_RTMP_URL'),
+      srtUrl: getEnv('OME_PROVIDER_SRT_URL', 'VITE_PROVIDER_SRT_URL'),
+    },
+    // Publisher URLs (for stream playback)
+    publishers: {
+      webrtcUrl: getEnv('OME_PUBLISHER_WEBRTC_URL', 'VITE_PUBLISHER_WEBRTC_URL'),
+      llhlsUrl: getEnv('OME_PUBLISHER_LLHLS_URL', 'VITE_PUBLISHER_LLHLS_URL'),
+    },
   },
 }

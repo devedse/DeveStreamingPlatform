@@ -56,13 +56,20 @@ services:
       # OvenMediaEngine Configuration (for nginx reverse proxy)
       - OME_API_URL=http://ovenmediaengine:8081
       - OME_API_TOKEN=ome-access-token
-      # Streaming URLs (displayed to users)
-      - OME_WEBRTC_URL=ws://10.88.28.212:3333
-      - OME_RTMP_URL=rtmp://10.88.28.212:1935
-      - OME_SRT_URL=srt://10.88.28.212:9999
+      
+      # Provider URLs (for stream ingestion/pushing - displayed to streamers)
+      - OME_PROVIDER_WEBRTC_URL=ws://10.88.28.212:3333
+      - OME_PROVIDER_RTMP_URL=rtmp://10.88.28.212:1935
+      - OME_PROVIDER_SRT_URL=srt://10.88.28.212:9999
+      
+      # Publisher URLs (for stream playback - used by players)
+      - OME_PUBLISHER_WEBRTC_URL=ws://10.88.28.212:3333
+      - OME_PUBLISHER_LLHLS_URL=http://10.88.28.212:3333
+      
       # OME Server Configuration
       - OME_VHOST=default
       - OME_APP=app
+      
       # Basic Authentication (optional)
       - BASIC_AUTH_USERNAME=admin
       - BASIC_AUTH_PASSWORD=secure-password
@@ -85,15 +92,32 @@ The application will be available at `http://localhost:8089`
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OME_API_URL` | **Internal URL** for nginx to proxy to OvenMediaEngine API. Usually this is the docker-compose name of ovenmediaengine with http and port. | Required |
+| `OME_API_URL` | **Internal URL** for nginx to proxy to OvenMediaEngine API | Required |
 | `OME_API_TOKEN` | OME API access token (used by proxy, not exposed to browser) | Required |
-| `OME_WEBRTC_URL` | WebRTC signaling URL (public URL for streaming) | Required |
-| `OME_RTMP_URL` | RTMP server URL (public URL for streaming) | Required |
-| `OME_SRT_URL` | SRT server URL (public URL for streaming) | Required |
+| **Provider URLs (Stream Ingestion)** | | |
+| `OME_PROVIDER_WEBRTC_URL` | WebRTC provider URL for pushing streams (e.g., `ws://host:3333`) | Required |
+| `OME_PROVIDER_RTMP_URL` | RTMP provider URL for pushing streams (e.g., `rtmp://host:1935`) | Required |
+| `OME_PROVIDER_SRT_URL` | SRT provider URL for pushing streams (e.g., `srt://host:9999`) | Required |
+| **Publisher URLs (Stream Playback)** | | |
+| `OME_PUBLISHER_WEBRTC_URL` | WebRTC publisher URL for playback (e.g., `ws://host:3333`) | Required |
+| `OME_PUBLISHER_LLHLS_URL` | LLHLS publisher URL for playback (e.g., `http://host:3333`) | Required |
+| **Server Configuration** | | |
 | `OME_VHOST` | Default virtual host | `default` |
 | `OME_APP` | Default application name | `app` |
+| **Authentication** | | |
 | `BASIC_AUTH_USERNAME` | HTTP basic auth username (optional) | - |
 | `BASIC_AUTH_PASSWORD` | HTTP basic auth password (optional) | - |
+
+### Architecture
+
+OvenMediaEngine separates **Providers** (ingestion) from **Publishers** (playback):
+- **Providers**: Accept incoming streams (RTMP, SRT, WebRTC push)
+- **Publishers**: Deliver streams to viewers (WebRTC, LLHLS)
+
+This separation allows you to:
+- Use different ports for ingestion vs playback
+- Expose only playback URLs publicly while keeping ingestion internal
+- Scale providers and publishers independently
 
 ### How It Works
 

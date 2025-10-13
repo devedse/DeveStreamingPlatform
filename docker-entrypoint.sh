@@ -43,15 +43,22 @@ cat > /usr/share/nginx/html/env-config.js << EOF
 window.ENV_CONFIG = {
   OME_VHOST: "${OME_VHOST:-default}",
   OME_APP: "${OME_APP:-app}",
-  OME_WEBRTC_URL: "${OME_WEBRTC_URL}",
-  OME_RTMP_URL: "${OME_RTMP_URL}",
-  OME_SRT_URL: "${OME_SRT_URL}",
+  OME_PROVIDER_WEBRTC_URL: "${OME_PROVIDER_WEBRTC_URL}",
+  OME_PROVIDER_RTMP_URL: "${OME_PROVIDER_RTMP_URL}",
+  OME_PROVIDER_SRT_URL: "${OME_PROVIDER_SRT_URL}",
+  OME_PUBLISHER_WEBRTC_URL: "${OME_PUBLISHER_WEBRTC_URL}",
+  OME_PUBLISHER_LLHLS_URL: "${OME_PUBLISHER_LLHLS_URL}",
 };
 EOF
 
 # Validate required configuration
-if [ -z "$OME_WEBRTC_URL" ] || [ -z "$OME_RTMP_URL" ] || [ -z "$OME_SRT_URL" ]; then
-    echo "❌ ERROR: OME_WEBRTC_URL, OME_RTMP_URL, and OME_SRT_URL are required!"
+if [ -z "$OME_PROVIDER_WEBRTC_URL" ] || [ -z "$OME_PROVIDER_RTMP_URL" ] || [ -z "$OME_PROVIDER_SRT_URL" ]; then
+    echo "❌ ERROR: OME_PROVIDER_WEBRTC_URL, OME_PROVIDER_RTMP_URL, and OME_PROVIDER_SRT_URL are required!"
+    exit 1
+fi
+
+if [ -z "$OME_PUBLISHER_WEBRTC_URL" ] || [ -z "$OME_PUBLISHER_LLHLS_URL" ]; then
+    echo "❌ ERROR: OME_PUBLISHER_WEBRTC_URL and OME_PUBLISHER_LLHLS_URL are required!"
     exit 1
 fi
 
