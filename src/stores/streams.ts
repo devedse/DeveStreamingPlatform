@@ -13,15 +13,15 @@ export const useStreamStore = defineStore('streams', () => {
 
   // Getters
   const activeStream = computed(() => 
-    streams.value.find(s => s.name === activeStreamName.value)
+    streams.value.find((s: StreamInfo) => s.name === activeStreamName.value)
   )
 
   const liveStreams = computed(() => 
-    streams.value.filter(s => s.isLive)
+    streams.value.filter((s: StreamInfo) => s.isLive)
   )
 
   const totalViewers = computed(() => 
-    streams.value.reduce((total, stream) => total + stream.viewerCount, 0)
+    streams.value.reduce((total: number, stream: StreamInfo) => total + stream.viewerCount, 0)
   )
 
   // Actions
@@ -32,7 +32,7 @@ export const useStreamStore = defineStore('streams', () => {
       const streamNames = await omeApi.getStreams()
       
       // Create StreamInfo objects for each stream
-      streams.value = streamNames.map(name => ({
+      streams.value = streamNames.map((name: string) => ({
         name,
         isLive: true, // If it's in the list, it's live
         viewerCount: 0,
@@ -40,7 +40,7 @@ export const useStreamStore = defineStore('streams', () => {
 
       // Fetch stats for each stream to get viewer counts
       await Promise.all(
-        streams.value.map(async (stream) => {
+        streams.value.map(async (stream: StreamInfo) => {
           const statsResponse = await omeApi.getStreamStats(stream.name)
           if (statsResponse?.response) {
             stream.stats = statsResponse.response
@@ -86,7 +86,7 @@ export const useStreamStore = defineStore('streams', () => {
 
   // Helper function to calculate total viewer count from connections
   function calculateViewerCount(stats: StreamStats): number {
-    return Object.values(stats.connections).reduce((sum, count) => sum + count, 0)
+    return Object.values(stats.connections).reduce((sum: number, count: unknown) => sum + (count as number), 0)
   }
 
   // Start polling for updates (optional, for real-time updates)

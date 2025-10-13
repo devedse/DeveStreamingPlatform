@@ -145,7 +145,7 @@ async function handleRefresh() {
 
 const totalViewers = computed(() => {
   if (!props.stats) return 0
-  return Object.values(props.stats.connections).reduce((sum: number, count: number) => sum + count, 0)
+  return Object.values(props.stats.connections).reduce((sum: number, count: unknown) => sum + (count as number), 0)
 })
 
 function formatBytes(bytes: number): string {

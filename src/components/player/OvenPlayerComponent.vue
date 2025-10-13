@@ -56,10 +56,6 @@ function initPlayer() {
       volume: 50,
       showBigPlayButton: true,
       aspectRatio: 'auto',
-      // Initialize hls.js for HLS/LLHLS support
-      hlsConfig: {
-        debug: false,
-      },
       waterMark: {
         image: '',
         position: 'bottom-right',

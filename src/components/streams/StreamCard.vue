@@ -69,7 +69,7 @@ const router = useRouter()
 // Use a simple gradient placeholder since we don't have stream thumbnails
 const placeholderImage = computed(() => {
   // Generate a gradient based on the stream name (simple hash for variety)
-  const hash = props.stream.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const hash = props.stream.name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
   const hue = hash % 360
   return `data:image/svg+xml,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:hsl(${hue},70%25,50%25);stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:hsl(${(hue + 60) % 360},70%25,30%25);stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='200' fill='url(%23grad)' /%3E%3C/svg%3E`
 })
