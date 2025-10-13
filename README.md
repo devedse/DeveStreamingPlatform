@@ -149,14 +149,18 @@ For local development, create a `.env.development` file. Vite is configured to p
 VITE_API_BASE_URL=http://your-ome-server:8081
 VITE_API_ACCESS_TOKEN=your-access-token
 
-# Streaming URLs
-VITE_WEBRTC_URL=ws://your-ome-server:3333
-VITE_RTMP_URL=rtmp://your-ome-server:1935
-VITE_SRT_URL=srt://your-ome-server:9999
+# Provider URLs (for stream ingestion/pushing)
+VITE_PROVIDER_WEBRTC_URL=ws://your-ome-server:3333
+VITE_PROVIDER_RTMP_URL=rtmp://your-ome-server:1935
+VITE_PROVIDER_SRT_URL=srt://your-ome-server:9999
+
+# Publisher URLs (for stream playback)
+VITE_PUBLISHER_WEBRTC_URL=ws://your-ome-server:3333
+VITE_PUBLISHER_LLHLS_URL=http://your-ome-server:3333
 
 # OME Configuration
 VITE_OME_VHOST=default
 VITE_OME_APP=app
 ```
 
-The dev server will proxy API calls from `/omeapi` to `VITE_API_BASE_URL`.
+The dev server will proxy API calls from `/omeapi` to `VITE_API_BASE_URL` and inject the authentication token.
