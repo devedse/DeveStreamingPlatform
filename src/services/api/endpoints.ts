@@ -40,12 +40,12 @@ export const generatePlaybackSources = (streamName: string) => {
   
   return [
     {
-      type: 'webrtc',
+      type: 'webrtc' as const,
       file: webrtcUrl,
       label: 'WebRTC (Ultra Low Latency)'
     },
     {
-      type: 'llhls',
+      type: 'llhls' as const,
       file: llhlsUrl,
       label: 'LLHLS (Low Latency)'
     }

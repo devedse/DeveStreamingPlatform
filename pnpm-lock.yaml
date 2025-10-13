@@ -39,6 +39,9 @@ importers:
       '@types/node':
         specifier: ^24.6.0
         version: 24.7.2
+      '@types/ovenplayer':
+        specifier: ^0.10.13
+        version: 0.10.13
       '@vitejs/plugin-vue':
         specifier: ^6.0.1
         version: 6.0.1(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))
@@ -281,6 +284,9 @@ packages:
 
   '@types/node@24.7.2':
     resolution: {integrity: sha512-/NbVmcGTP+lj5oa4yiYxxeBjRivKQ5Ns1eSZeB99ExsEQ6rX5XYU1Zy/gGxY/ilqtD4Etx9mKyrPxZRetiahhA==}
+
+  '@types/ovenplayer@0.10.13':
+    resolution: {integrity: sha512-XunTSipcr/JdcKDqjXwiJdYFGWZYurdk7P4zs8Oelc5Px7ImctKs9DbzFV8Ae2i5M0IWAwJFM6sKJGGCqVFnYQ==}
 
   '@vitejs/plugin-vue@6.0.1':
     resolution: {integrity: sha512-+MaE752hU0wfPFJEUAIxqw18+20euHHdxVtMvbFcOEpjEyfqXH/5DCoTHiVJ0J29EhTJdoTkjEv5YBKU9dnoTw==}
@@ -983,6 +989,8 @@ snapshots:
   '@types/node@24.7.2':
     dependencies:
       undici-types: 7.14.0
+
+  '@types/ovenplayer@0.10.13': {}
 
   '@vitejs/plugin-vue@6.0.1(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))':
     dependencies:

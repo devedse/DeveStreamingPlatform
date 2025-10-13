@@ -1,15 +1,15 @@
 <template>
   <div class="oven-player-wrapper">
-    <div ref="playerElement" class="oven-player-container"></div>
+    <div id="ovenplayer" class="oven-player-container"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { onMounted, onBeforeUnmount, watch } from 'vue'
 import OvenPlayer from 'ovenplayer'
 
 interface Source {
-  type: string
+  type: 'webrtc' | 'llhls' | 'hls' | 'lldash' | 'dash' | 'mp4'
   file: string
   label: string
 }
@@ -23,7 +23,6 @@ const props = withDefaults(defineProps<Props>(), {
   autoplay: true,
 })
 
-const playerElement = ref<HTMLElement | null>(null)
 let player: any = null
 
 onMounted(() => {
@@ -42,20 +41,16 @@ watch(() => props.sources, () => {
 }, { deep: true })
 
 function initPlayer() {
-  if (!playerElement.value) {
-    console.error('Player element not found')
-    return
-  }
-
   try {
-    player = OvenPlayer.create(playerElement.value, {
+    player = OvenPlayer.create('ovenplayer', {
       sources: props.sources,
       autoStart: props.autoplay,
       controls: true,
-      muted: false,
+      mute: false,
       volume: 50,
       showBigPlayButton: true,
       aspectRatio: 'auto',
+      autoFallback: false,
       waterMark: {
         image: '',
         position: 'bottom-right',
