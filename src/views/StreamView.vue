@@ -25,7 +25,7 @@
       <div class="player-wrapper">
         <v-card elevation="2" class="player-card">
           <OvenPlayerComponent
-            :stream-url="playbackUrl"
+            :sources="playbackSources"
             :autoplay="true"
           />
         </v-card>
@@ -46,7 +46,7 @@
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
-import { generatePlaybackUrl } from '@/services/api/endpoints'
+import { generatePlaybackSources } from '@/services/api/endpoints'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
 import StreamStats from '@/components/streams/StreamStats.vue'
 
@@ -55,7 +55,7 @@ const router = useRouter()
 const streamStore = useStreamStore()
 
 const streamName = computed(() => route.params.name as string)
-const playbackUrl = computed(() => generatePlaybackUrl(streamName.value))
+const playbackSources = computed(() => generatePlaybackSources(streamName.value))
 const stats = computed(() => streamStore.activeStreamStats)
 const statsLoading = computed(() => streamStore.loading)
 

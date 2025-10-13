@@ -8,8 +8,14 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import OvenPlayer from 'ovenplayer'
 
+interface Source {
+  type: string
+  file: string
+  label: string
+}
+
 interface Props {
-  streamUrl: string
+  sources: Source[]
   autoplay?: boolean
 }
 
@@ -28,12 +34,12 @@ onBeforeUnmount(() => {
   destroyPlayer()
 })
 
-watch(() => props.streamUrl, () => {
+watch(() => props.sources, () => {
   if (player) {
     destroyPlayer()
     initPlayer()
   }
-})
+}, { deep: true })
 
 function initPlayer() {
   if (!playerElement.value) {
@@ -43,18 +49,17 @@ function initPlayer() {
 
   try {
     player = OvenPlayer.create(playerElement.value, {
-      sources: [
-        {
-          type: 'webrtc',
-          file: props.streamUrl,
-        },
-      ],
+      sources: props.sources,
       autoStart: props.autoplay,
       controls: true,
       muted: false,
       volume: 50,
       showBigPlayButton: true,
       aspectRatio: 'auto',
+      // Initialize hls.js for HLS/LLHLS support
+      hlsConfig: {
+        debug: false,
+      },
       waterMark: {
         image: '',
         position: 'bottom-right',

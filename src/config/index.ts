@@ -9,6 +9,7 @@ declare global {
       OME_WEBRTC_URL?: string
       OME_RTMP_URL?: string
       OME_SRT_URL?: string
+      OME_LLHLS_URL?: string
     }
   }
 }
@@ -29,5 +30,6 @@ export const config = {
     webrtcUrl: getEnv('OME_WEBRTC_URL', 'VITE_WEBRTC_URL'),
     rtmpUrl: getEnv('OME_RTMP_URL', 'VITE_RTMP_URL'),
     srtUrl: getEnv('OME_SRT_URL', 'VITE_SRT_URL'),
+    llhlsUrl: getEnv('OME_LLHLS_URL', 'VITE_LLHLS_URL'),
   },
 }
