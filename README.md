@@ -54,7 +54,7 @@ services:
       - "8089:80"
     environment:
       # OvenMediaEngine Configuration (for nginx reverse proxy)
-      - OME_API_URL=http://10.88.28.212:8081
+      - OME_API_URL=http://ovenmediaengine:8081
       - OME_API_TOKEN=ome-access-token
       # Streaming URLs (displayed to users)
       - OME_WEBRTC_URL=ws://10.88.28.212:3333
@@ -85,8 +85,8 @@ The application will be available at `http://localhost:8089`
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `OME_API_URL` | **Internal URL** for nginx to proxy to OvenMediaEngine API | Required |
-| `OME_API_TOKEN` | OME API access token | Required |
+| `OME_API_URL` | **Internal URL** for nginx to proxy to OvenMediaEngine API. Usually this is the docker-compose name of ovenmediaengine with http and port. | Required |
+| `OME_API_TOKEN` | OME API access token (used by proxy, not exposed to browser) | Required |
 | `OME_WEBRTC_URL` | WebRTC signaling URL (public URL for streaming) | Required |
 | `OME_RTMP_URL` | RTMP server URL (public URL for streaming) | Required |
 | `OME_SRT_URL` | SRT server URL (public URL for streaming) | Required |
@@ -97,11 +97,12 @@ The application will be available at `http://localhost:8089`
 
 ### How It Works
 
-The application uses nginx as a reverse proxy:
-- **Frontend → `/omeapi`** → nginx proxy → **OvenMediaEngine API** (`OME_API_URL`)
+The application uses nginx as a reverse proxy with authentication:
+- **Frontend → `/omeapi`** → nginx proxy (adds Basic Auth) → **OvenMediaEngine API** (`OME_API_URL`)
 - This allows the frontend to make API calls without CORS issues
-- The `OME_API_URL` is only used by nginx internally and never exposed to the browser
-- All API requests from the browser go to `/omeapi` which nginx forwards to the actual OME server
+- The `OME_API_URL` and `OME_API_TOKEN` are only used by nginx internally and never exposed to the browser
+- All API requests from the browser go to `/omeapi` which nginx forwards to the actual OME server with authentication
+- The API token is injected by the proxy layer (nginx in production, Vite in development)
 
 ## Local Development
 

@@ -7,15 +7,12 @@ class OmeApiClient {
   private client: AxiosInstance
 
   constructor() {
-    // Create base64 encoded auth token from config
-    const base64Auth = btoa(config.api.accessToken)
-    
     this.client = axios.create({
       baseURL: config.api.baseUrl,
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${base64Auth}`,
+        // No Authorization header needed - handled by proxy
       },
     })
 

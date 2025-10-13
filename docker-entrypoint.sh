@@ -21,9 +21,18 @@ fi
 export OME_API_PROXY_URL="${OME_API_URL}"
 echo "✓ OME API proxy configured: ${OME_API_URL}"
 
+# Configure OME API authentication
+if [ -z "$OME_API_TOKEN" ]; then
+    echo "❌ ERROR: OME_API_TOKEN environment variable is required!"
+    exit 1
+fi
+# Convert token to base64 for nginx Basic Auth header
+export OME_API_TOKEN_BASE64=$(echo -n "$OME_API_TOKEN" | base64)
+echo "✓ OME API authentication configured"
+
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
-envsubst '${OME_API_PROXY_URL}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
 mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 
 # Inject runtime environment variables into the built JavaScript
@@ -32,7 +41,6 @@ echo "✓ Injecting runtime configuration..."
 # Create env-config.js with runtime variables
 cat > /usr/share/nginx/html/env-config.js << EOF
 window.ENV_CONFIG = {
-  OME_API_TOKEN: "${OME_API_TOKEN}",
   OME_VHOST: "${OME_VHOST:-default}",
   OME_APP: "${OME_APP:-app}",
   OME_WEBRTC_URL: "${OME_WEBRTC_URL}",
@@ -42,11 +50,6 @@ window.ENV_CONFIG = {
 EOF
 
 # Validate required configuration
-if [ -z "$OME_API_TOKEN" ]; then
-    echo "❌ ERROR: OME_API_TOKEN environment variable is required!"
-    exit 1
-fi
-
 if [ -z "$OME_WEBRTC_URL" ] || [ -z "$OME_RTMP_URL" ] || [ -z "$OME_SRT_URL" ]; then
     echo "❌ ERROR: OME_WEBRTC_URL, OME_RTMP_URL, and OME_SRT_URL are required!"
     exit 1

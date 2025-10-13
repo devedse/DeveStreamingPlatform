@@ -2,7 +2,6 @@
 declare global {
   interface Window {
     ENV_CONFIG?: {
-      OME_API_TOKEN?: string
       OME_VHOST?: string
       OME_APP?: string
       OME_WEBRTC_URL?: string
@@ -21,8 +20,8 @@ const getEnv = (runtimeKey: keyof NonNullable<Window['ENV_CONFIG']>, buildKey: s
 export const config = {
   api: {
     // Always use the nginx proxy path
+    // No token needed - handled by proxy (nginx in prod, vite in dev)
     baseUrl: '/omeapi',
-    accessToken: getEnv('OME_API_TOKEN', 'VITE_API_ACCESS_TOKEN'),
   },
   ome: {
     vhost: getEnv('OME_VHOST', 'VITE_OME_VHOST') || 'default',

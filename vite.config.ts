@@ -8,10 +8,16 @@ export default defineConfig(({ mode }) => {
   // Load env variables for the proxy configuration
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const apiTarget = env.VITE_API_BASE_URL
+  const apiToken = env.VITE_API_ACCESS_TOKEN
   
   // Only require VITE_API_BASE_URL in development mode (for proxy)
   if (mode === 'development' && !apiTarget) {
     console.error('❌ ERROR: VITE_API_BASE_URL is required in .env.development')
+    process.exit(1)
+  }
+  
+  if (mode === 'development' && !apiToken) {
+    console.error('❌ ERROR: VITE_API_ACCESS_TOKEN is required in .env.development')
     process.exit(1)
   }
   
@@ -32,6 +38,13 @@ export default defineConfig(({ mode }) => {
             target: apiTarget,
             changeOrigin: true,
             rewrite: (path) => path.replace(/^\/omeapi/, ''),
+            configure: (proxy, _options) => {
+              proxy.on('proxyReq', (proxyReq, _req, _res) => {
+                // Inject Basic Auth header in the proxy
+                const base64Auth = Buffer.from(apiToken).toString('base64')
+                proxyReq.setHeader('Authorization', `Basic ${base64Auth}`)
+              })
+            }
           }
         }
       }
