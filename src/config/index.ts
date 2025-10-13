@@ -2,7 +2,6 @@
 declare global {
   interface Window {
     ENV_CONFIG?: {
-      OME_API_URL?: string
       OME_API_TOKEN?: string
       OME_VHOST?: string
       OME_APP?: string
@@ -21,7 +20,8 @@ const getEnv = (runtimeKey: keyof NonNullable<Window['ENV_CONFIG']>, buildKey: s
 
 export const config = {
   api: {
-    baseUrl: getEnv('OME_API_URL', 'VITE_API_BASE_URL'),
+    // Always use the nginx proxy path
+    baseUrl: '/omeapi',
     accessToken: getEnv('OME_API_TOKEN', 'VITE_API_ACCESS_TOKEN'),
   },
   ome: {
