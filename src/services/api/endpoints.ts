@@ -32,9 +32,9 @@ export const generateStreamUrls = (streamName: string) => {
 
 // Generate playback URLs for OvenPlayer (multiple sources for protocol selection)
 export const generatePlaybackSources = (streamName: string) => {
-  // For WebRTC with transcodes, use the playlist name (multistream) instead of just stream name
-  const webrtcUrl = `${config.ome.publishers.webrtcUrl}/${config.ome.app}/${streamName}/multistream`
-  const llhlsUrl = `${config.ome.publishers.llhlsUrl}/${config.ome.app}/${streamName}/multistream.m3u8`
+  // For WebRTC with transcodes, use the playlist name (multistream_webrtc) instead of just stream name
+  const webrtcUrl = `${config.ome.publishers.webrtcUrl}/${config.ome.app}/${streamName}/multistream_webrtc`
+  const llhlsUrl = `${config.ome.publishers.llhlsUrl}/${config.ome.app}/${streamName}/multistream_llhls.m3u8`
 
   console.log('WebRTC URL:', webrtcUrl);
   console.log('LLHLS URL:', llhlsUrl);
@@ -51,10 +51,4 @@ export const generatePlaybackSources = (streamName: string) => {
       label: 'LLHLS (Low Latency)'
     }
   ]
-}
-
-// Generate playback URL for OvenPlayer (legacy, single source)
-export const generatePlaybackUrl = (streamName: string) => {
-  // For WebRTC with transcodes, use the playlist name (multistream) instead of just stream name
-  return `${config.ome.publishers.webrtcUrl}/${config.ome.app}/${streamName}/multistream`
 }
