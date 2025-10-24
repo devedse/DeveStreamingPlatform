@@ -39,10 +39,6 @@ A modern web interface for managing and viewing live streams with OvenMediaEngin
 - **WebRTC Ingest**: `ws://server:3333/app/streamname?direction=send`
 - **WHIP**: `http://server:3333/app/streamname?direction=whip`
 
-#### Playback (Publisher) URLs
-- **WebRTC**: `ws://server:3333/app/streamname/multistream` (for transcoded streams)
-- **LLHLS**: `http://server:3333/app/streamname/multistream.m3u8` (for transcoded streams)
-
 ## Docker Deployment
 
 Build and run with Docker Compose. The application uses nginx as a reverse proxy to communicate with OvenMediaEngine, so all API calls go through `/omeapi` internally.
