@@ -33,10 +33,15 @@ A modern web interface for managing and viewing live streams with OvenMediaEngin
 
 ### Streaming URL Examples
 
+#### Ingestion (Provider) URLs
 - **RTMP**: `rtmp://server:1935/app/` + stream key
 - **SRT**: `srt://server:9999?streamid=app/app/streamname`
 - **WebRTC Ingest**: `ws://server:3333/app/streamname?direction=send`
 - **WHIP**: `http://server:3333/app/streamname?direction=whip`
+
+#### Playback (Publisher) URLs
+- **WebRTC**: `ws://server:3333/app/streamname/multistream` (for transcoded streams)
+- **LLHLS**: `http://server:3333/app/streamname/multistream.m3u8` (for transcoded streams)
 
 ## Docker Deployment
 
