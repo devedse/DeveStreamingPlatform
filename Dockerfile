@@ -1,6 +1,9 @@
 # Build stage
 FROM node:24-alpine AS build
 
+# Accept build version argument
+ARG BUILD_VERSION=dev
+
 WORKDIR /app
 
 # Copy package files
@@ -12,8 +15,9 @@ RUN npm install -g pnpm && pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the application
-RUN pnpm build
+# Build the application with version
+RUN echo "Building version: ${BUILD_VERSION}" && \
+    VITE_APP_VERSION=${BUILD_VERSION} pnpm build
 
 # Production stage
 FROM nginx:alpine

@@ -2,6 +2,10 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuetify from 'vite-plugin-vuetify'
 import { fileURLToPath, URL } from 'node:url'
+import { readFileSync } from 'node:fs'
+
+// Read version from package.json as fallback
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -10,6 +14,9 @@ export default defineConfig(({ mode }) => {
   const apiTarget = env.VITE_API_BASE_URL
   const apiToken = env.VITE_API_ACCESS_TOKEN
   const thumbnailTarget = env.VITE_THUMBNAIL_URL
+  
+  // Use VITE_APP_VERSION from environment (set by Docker build), or fall back to package.json version
+  const version = env.VITE_APP_VERSION || process.env.VITE_APP_VERSION || packageJson.version
   
   // Only require VITE_API_BASE_URL in development mode (for proxy)
   if (mode === 'development' && !apiTarget) {
@@ -27,6 +34,9 @@ export default defineConfig(({ mode }) => {
       vue(),
       vuetify({ autoImport: true }),
     ],
+    define: {
+      __APP_VERSION__: JSON.stringify(version),
+    },
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url))
