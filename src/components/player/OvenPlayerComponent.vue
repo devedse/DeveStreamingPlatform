@@ -47,18 +47,10 @@ function initPlayer() {
       autoStart: props.autoplay,
       controls: true,
       mute: false,
-      volume: 50,
+      //volume: 50,
       showBigPlayButton: true,
       aspectRatio: 'auto',
       autoFallback: false,
-      waterMark: {
-        image: '',
-        position: 'bottom-right',
-        y: '20',
-        x: '20',
-        width: '100',
-        height: '30',
-      },
     })
 
     player.on('ready', () => {
