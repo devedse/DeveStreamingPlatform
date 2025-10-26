@@ -54,13 +54,10 @@ export const generatePlaybackSources = (streamName: string) => {
 }
 
 // Generate thumbnail URL for a stream
-// Example: http://10.88.28.213:20080/app/Devedse/thumb.png
+// Example: /thumbnails/app/Devedse/thumb.png?t=1234567890
 // Includes a timestamp parameter to prevent browser caching
 export const generateThumbnailUrl = (streamName: string) => {
-  if (!config.ome.thumbnailUrl) {
-    return null
-  }
   // Add timestamp to prevent caching - thumbnails update frequently for live streams
   const timestamp = Date.now()
-  return `${config.ome.thumbnailUrl}/${config.ome.app}/${streamName}/thumb.png?t=${timestamp}`
+  return `${config.api.thumbnailUrl}/${config.ome.app}/${streamName}/thumb.png?t=${timestamp}`
 }

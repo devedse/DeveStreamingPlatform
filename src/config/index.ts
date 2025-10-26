@@ -11,8 +11,6 @@ declare global {
       // Publisher URLs (for playback)
       OME_PUBLISHER_WEBRTC_URL?: string
       OME_PUBLISHER_LLHLS_URL?: string
-      // Thumbnail URL
-      OME_THUMBNAIL_URL?: string
     }
   }
 }
@@ -27,6 +25,8 @@ export const config = {
     // Always use the nginx proxy path
     // No token needed - handled by proxy (nginx in prod, vite in dev)
     baseUrl: '/omeapi',
+    // Thumbnail proxy path (handled by nginx in prod, vite in dev)
+    thumbnailUrl: '/thumbnails',
   },
   ome: {
     vhost: getEnv('OME_VHOST', 'VITE_OME_VHOST') || 'default',
@@ -42,8 +42,5 @@ export const config = {
       webrtcUrl: getEnv('OME_PUBLISHER_WEBRTC_URL', 'VITE_PUBLISHER_WEBRTC_URL'),
       llhlsUrl: getEnv('OME_PUBLISHER_LLHLS_URL', 'VITE_PUBLISHER_LLHLS_URL'),
     },
-    // Thumbnail URL base (for fetching stream thumbnails)
-    // Always use the nginx/vite proxy path
-    thumbnailUrl: getEnv('OME_THUMBNAIL_URL', 'VITE_THUMBNAIL_URL') || '/thumbnails',
   },
 }
