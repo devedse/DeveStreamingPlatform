@@ -7,15 +7,17 @@
     @click="goToStream"
   >
     <div class="thumbnail-wrapper">
-      <v-img
-        :src="displayImage"
-        height="200"
-        cover
-        @error="handleThumbnailError"
-        class="stream-thumbnail"
-      >
-        <!-- Dark overlay for better text readability -->
-        <div class="thumbnail-overlay"></div>
+      <transition-group name="crossfade" tag="div" class="image-container">
+        <v-img
+          :src="displayedThumbnail"
+          :key="displayedThumbnail"
+          height="200"
+          cover
+          @error="handleThumbnailError"
+          class="stream-thumbnail"
+        >
+          <!-- Dark overlay for better text readability -->
+          <div class="thumbnail-overlay"></div>
         
         <!-- Live badge overlay -->
         <div class="stream-overlay">
@@ -53,6 +55,7 @@
           </v-chip>
         </div>
       </v-img>
+      </transition-group>
     </div>
 
     <v-card-title class="stream-title">
@@ -88,19 +91,11 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 const thumbnailError = ref(false)
-const thumbnailKey = ref(0)
-
-// Watch for stream changes to reset error state and force thumbnail refresh
-watch(() => props.stream, () => {
-  thumbnailError.value = false
-  thumbnailKey.value++
-}, { deep: true })
+const displayedThumbnail = ref<string>('')
+const pendingThumbnail = ref<string>('')
 
 // Get the thumbnail URL from OME
-// The thumbnailKey ensures the URL regenerates (with new timestamp) when stream updates
 const thumbnailUrl = computed(() => {
-  // Reference thumbnailKey to make this reactive to stream changes
-  thumbnailKey.value
   if (thumbnailError.value) {
     return null
   }
@@ -116,8 +111,39 @@ const placeholderImage = computed(() => {
 })
 
 // Use thumbnail if available, otherwise use placeholder
-const displayImage = computed(() => {
+const currentThumbnailUrl = computed(() => {
   return thumbnailUrl.value || placeholderImage.value
+})
+
+// Initialize with the first image
+if (!displayedThumbnail.value) {
+  displayedThumbnail.value = currentThumbnailUrl.value
+}
+
+// Watch for thumbnail URL changes and preload before updating
+watch(currentThumbnailUrl, (newUrl) => {
+  if (newUrl !== displayedThumbnail.value) {
+    pendingThumbnail.value = newUrl
+    
+    // Preload the image
+    const img = new Image()
+    img.onload = () => {
+      // Only update if this is still the pending image (prevents race conditions)
+      if (pendingThumbnail.value === newUrl) {
+        // Update displayed thumbnail only after image is loaded
+        displayedThumbnail.value = newUrl
+        pendingThumbnail.value = ''
+      }
+    }
+    img.onerror = () => {
+      // On error, still update (might be SVG data URL)
+      if (pendingThumbnail.value === newUrl) {
+        displayedThumbnail.value = newUrl
+        pendingThumbnail.value = ''
+      }
+    }
+    img.src = newUrl
+  }
 })
 
 function handleThumbnailError() {
@@ -146,8 +172,37 @@ function goToStream() {
   overflow: hidden;
 }
 
+.image-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+}
+
 .stream-thumbnail {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  width: 100%;
   transition: transform 0.3s ease;
+}
+
+/* Crossfade transition */
+.crossfade-enter-active,
+.crossfade-leave-active {
+  transition: opacity 2s ease-in-out;
+}
+
+.crossfade-enter-from {
+  opacity: 0;
+}
+
+.crossfade-leave-to {
+  opacity: 0;
+}
+
+.crossfade-enter-to,
+.crossfade-leave-from {
+  opacity: 1;
 }
 
 .stream-card:hover .stream-thumbnail {

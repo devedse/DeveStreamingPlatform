@@ -31,13 +31,22 @@ export const useStreamStore = defineStore('streams', () => {
     try {
       const streamNames = await omeApi.getStreams()
       
-      // Create StreamInfo objects for each stream
-      streams.value = streamNames.map((name: string) => ({
-        name,
-        isLive: true, // If it's in the list, it's live
-        viewerCount: 0,
-        isRecording: false,
-      }))
+      // Create a map of existing streams to preserve current viewer counts
+      const existingStreamsMap = new Map(
+        streams.value.map((s: StreamInfo) => [s.name, s])
+      )
+      
+      // Create StreamInfo objects for each stream, preserving existing data
+      streams.value = streamNames.map((name: string) => {
+        const existingStream = existingStreamsMap.get(name)
+        return {
+          name,
+          isLive: true, // If it's in the list, it's live
+          viewerCount: existingStream?.viewerCount ?? 0, // Preserve existing viewer count
+          isRecording: existingStream?.isRecording ?? false, // Preserve existing recording state
+          stats: existingStream?.stats, // Preserve existing stats
+        }
+      })
 
       // Fetch recording states
       const recordings = await omeApi.getRecordingState()
