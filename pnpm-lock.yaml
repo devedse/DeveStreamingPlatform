@@ -37,14 +37,14 @@ importers:
         version: 3.10.5(typescript@5.9.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.22(typescript@5.9.3))
     devDependencies:
       '@types/node':
-        specifier: ^24.6.0
-        version: 24.7.2
+        specifier: ^24.9.0
+        version: 24.9.0
       '@types/ovenplayer':
         specifier: ^0.10.13
         version: 0.10.13
       '@vitejs/plugin-vue':
         specifier: ^6.0.1
-        version: 6.0.1(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))
+        version: 6.0.1(rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))
       '@vue/tsconfig':
         specifier: ^0.8.1
         version: 0.8.1(typescript@5.9.3)(vue@3.5.22(typescript@5.9.3))
@@ -56,10 +56,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: npm:rolldown-vite@7.1.14
-        version: rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2)
+        version: rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2)
       vite-plugin-vuetify:
         specifier: ^2.1.2
-        version: 2.1.2(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)
+        version: 2.1.2(rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)
       vue-tsc:
         specifier: ^3.1.0
         version: 3.1.1(typescript@5.9.3)
@@ -282,8 +282,8 @@ packages:
   '@tybys/wasm-util@0.10.1':
     resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
-  '@types/node@24.7.2':
-    resolution: {integrity: sha512-/NbVmcGTP+lj5oa4yiYxxeBjRivKQ5Ns1eSZeB99ExsEQ6rX5XYU1Zy/gGxY/ilqtD4Etx9mKyrPxZRetiahhA==}
+  '@types/node@24.9.0':
+    resolution: {integrity: sha512-MKNwXh3seSK8WurXF7erHPJ2AONmMwkI7zAMrXZDPIru8jRqkk6rGDBVbw4mLwfqA+ZZliiDPg05JQ3uW66tKQ==}
 
   '@types/ovenplayer@0.10.13':
     resolution: {integrity: sha512-XunTSipcr/JdcKDqjXwiJdYFGWZYurdk7P4zs8Oelc5Px7ImctKs9DbzFV8Ae2i5M0IWAwJFM6sKJGGCqVFnYQ==}
@@ -292,7 +292,7 @@ packages:
     resolution: {integrity: sha512-+MaE752hU0wfPFJEUAIxqw18+20euHHdxVtMvbFcOEpjEyfqXH/5DCoTHiVJ0J29EhTJdoTkjEv5YBKU9dnoTw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
-      vite: npm:rolldown-vite@7.1.14
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
       vue: ^3.2.25
 
   '@volar/language-core@2.4.23':
@@ -771,8 +771,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  undici-types@7.14.0:
-    resolution: {integrity: sha512-QQiYxHuyZ9gQUIrmPo3IA+hUl4KYk8uSA7cHrcKd/l3p1OTpZcM0Tbp9x7FAtXdAYhlasd60ncPpgu6ihG6TOA==}
+  undici-types@7.16.0:
+    resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
   upath@2.0.1:
     resolution: {integrity: sha512-1uEe95xksV1O0CYKXo8vQvN1JEbtJp7lb7C5U9HMsIp6IVwntkH/oNUzyVNQSd4S1sYk2FpSSW44FqMc8qee5w==}
@@ -782,7 +782,7 @@ packages:
     resolution: {integrity: sha512-I/wd6QS+DO6lHmuGoi1UTyvvBTQ2KDzQZ9oowJQEJ6OcjWfJnscYXx2ptm6S7fJSASuZT8jGRBL3LV4oS3LpaA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     peerDependencies:
-      vite: npm:rolldown-vite@7.1.14
+      vite: '>=5'
       vue: ^3.0.0
       vuetify: ^3.0.0
 
@@ -986,16 +986,16 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@types/node@24.7.2':
+  '@types/node@24.9.0':
     dependencies:
-      undici-types: 7.14.0
+      undici-types: 7.16.0
 
   '@types/ovenplayer@0.10.13': {}
 
-  '@vitejs/plugin-vue@6.0.1(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.1(rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.0-beta.29
-      vite: rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2)
+      vite: rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2)
       vue: 3.5.22(typescript@5.9.3)
 
   '@volar/language-core@2.4.23':
@@ -1101,7 +1101,7 @@ snapshots:
       typescript: 5.9.3
       vue: 3.5.22(typescript@5.9.3)
 
-  '@vuetify/loader-shared@2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5(typescript@5.9.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.22(typescript@5.9.3)))':
+  '@vuetify/loader-shared@2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)':
     dependencies:
       upath: 2.0.1
       vue: 3.5.22(typescript@5.9.3)
@@ -1371,7 +1371,7 @@ snapshots:
 
   rfdc@1.4.1: {}
 
-  rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2):
+  rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2):
     dependencies:
       '@oxc-project/runtime': 0.92.0
       fdir: 6.5.0(picomatch@4.0.3)
@@ -1381,7 +1381,7 @@ snapshots:
       rolldown: 1.0.0-beta.41
       tinyglobby: 0.2.15
     optionalDependencies:
-      '@types/node': 24.7.2
+      '@types/node': 24.9.0
       fsevents: 2.3.3
       sass: 1.93.2
 
@@ -1437,16 +1437,16 @@ snapshots:
 
   typescript@5.9.3: {}
 
-  undici-types@7.14.0: {}
+  undici-types@7.16.0: {}
 
   upath@2.0.1: {}
 
-  vite-plugin-vuetify@2.1.2(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5):
+  vite-plugin-vuetify@2.1.2(rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5):
     dependencies:
-      '@vuetify/loader-shared': 2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5(typescript@5.9.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.22(typescript@5.9.3)))
+      '@vuetify/loader-shared': 2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)
       debug: 4.4.3
       upath: 2.0.1
-      vite: rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2)
+      vite: rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2)
       vue: 3.5.22(typescript@5.9.3)
       vuetify: 3.10.5(typescript@5.9.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.22(typescript@5.9.3))
     transitivePeerDependencies:
@@ -1480,6 +1480,6 @@ snapshots:
       vue: 3.5.22(typescript@5.9.3)
     optionalDependencies:
       typescript: 5.9.3
-      vite-plugin-vuetify: 2.1.2(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)
+      vite-plugin-vuetify: 2.1.2(rolldown-vite@7.1.14(@types/node@24.9.0)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)
 
   whatwg-fetch@3.6.20: {}
