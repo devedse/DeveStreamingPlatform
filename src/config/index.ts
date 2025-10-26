@@ -11,6 +11,8 @@ declare global {
       // Publisher URLs (for playback)
       OME_PUBLISHER_WEBRTC_URL?: string
       OME_PUBLISHER_LLHLS_URL?: string
+      // Thumbnail URL
+      OME_THUMBNAIL_URL?: string
     }
   }
 }
@@ -40,5 +42,7 @@ export const config = {
       webrtcUrl: getEnv('OME_PUBLISHER_WEBRTC_URL', 'VITE_PUBLISHER_WEBRTC_URL'),
       llhlsUrl: getEnv('OME_PUBLISHER_LLHLS_URL', 'VITE_PUBLISHER_LLHLS_URL'),
     },
+    // Thumbnail URL base (for fetching stream thumbnails)
+    thumbnailUrl: getEnv('OME_THUMBNAIL_URL', 'VITE_THUMBNAIL_URL'),
   },
 }

@@ -52,3 +52,12 @@ export const generatePlaybackSources = (streamName: string) => {
     }
   ]
 }
+
+// Generate thumbnail URL for a stream
+// Example: http://10.88.28.213:20080/app/Devedse/thumb.png
+export const generateThumbnailUrl = (streamName: string) => {
+  if (!config.ome.thumbnailUrl) {
+    return null
+  }
+  return `${config.ome.thumbnailUrl}/${config.ome.app}/${streamName}/thumb.png`
+}

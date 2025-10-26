@@ -7,7 +7,8 @@ A modern web interface for managing and viewing live streams with OvenMediaEngin
 ## Features
 
 - 📺 **Live Stream Management** - View all active streams in real-time
-- 📊 **Stream Statistics** - Monitor bitrate, resolution, codec, and viewer count
+- �️ **Stream Thumbnails** - Automatic thumbnail generation from live streams
+- �📊 **Stream Statistics** - Monitor bitrate, resolution, codec, and viewer count
 - 🎬 **Integrated Player** - Built-in OvenPlayer for WebRTC playback
 - 🌐 **Multi-Protocol Support** - Generate URLs for SRT, RTMP, WebRTC, and WHIP
 - ⚡ **Low Latency** - WebRTC support for sub-second latency streaming
@@ -59,13 +60,16 @@ services:
       - OME_API_TOKEN=ome-access-token
       
       # Provider URLs (for stream ingestion/pushing - displayed to streamers)
-      - OME_PROVIDER_WEBRTC_URL=ws://10.88.28.212:3333
-      - OME_PROVIDER_RTMP_URL=rtmp://10.88.28.212:1935
-      - OME_PROVIDER_SRT_URL=srt://10.88.28.212:9999
+      - OME_PROVIDER_WEBRTC_URL=ws://10.88.28.213:3333
+      - OME_PROVIDER_RTMP_URL=rtmp://10.88.28.213:1935
+      - OME_PROVIDER_SRT_URL=srt://10.88.28.213:9999
       
       # Publisher URLs (for stream playback - used by players)
-      - OME_PUBLISHER_WEBRTC_URL=ws://10.88.28.212:3333
-      - OME_PUBLISHER_LLHLS_URL=http://10.88.28.212:3333
+      - OME_PUBLISHER_WEBRTC_URL=ws://10.88.28.213:3333
+      - OME_PUBLISHER_LLHLS_URL=http://10.88.28.213:3333
+      
+      # Thumbnail URL (for stream thumbnails)
+      - OME_THUMBNAIL_URL=http://10.88.28.213:20080
       
       # OME Server Configuration
       - OME_VHOST=default
@@ -102,6 +106,8 @@ The application will be available at `http://localhost:8089`
 | **Publisher URLs (Stream Playback)** | | |
 | `OME_PUBLISHER_WEBRTC_URL` | WebRTC publisher URL for playback (e.g., `ws://host:3333`) | Required |
 | `OME_PUBLISHER_LLHLS_URL` | LLHLS publisher URL for playback (e.g., `http://host:3333`) | Required |
+| **Thumbnails** | | |
+| `OME_THUMBNAIL_URL` | Thumbnail base URL (e.g., `http://host:20080`) | Optional |
 | **Server Configuration** | | |
 | `OME_VHOST` | Default virtual host | `default` |
 | `OME_APP` | Default application name | `app` |
@@ -158,6 +164,9 @@ VITE_PROVIDER_SRT_URL=srt://your-ome-server:9999
 # Publisher URLs (for stream playback)
 VITE_PUBLISHER_WEBRTC_URL=ws://your-ome-server:3333
 VITE_PUBLISHER_LLHLS_URL=http://your-ome-server:3333
+
+# Thumbnail URL (for stream thumbnails)
+VITE_THUMBNAIL_URL=http://your-ome-server:20080
 
 # OME Configuration
 VITE_OME_VHOST=default
