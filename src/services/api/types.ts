@@ -16,13 +16,13 @@ export interface StreamStats {
   createdTime: string
   lastRecvTime?: string
   lastSentTime?: string
-  totalBytesIn: number
-  totalBytesOut: number
+  totalBytesIn: number // bytes
+  totalBytesOut: number // bytes
   totalConnections: number
-  avgThroughputIn: number
-  avgThroughputOut: number
-  maxThroughputIn: number
-  maxThroughputOut: number
+  avgThroughputIn: number // bits per second
+  avgThroughputOut: number // bits per second
+  maxThroughputIn: number // bits per second
+  maxThroughputOut: number // bits per second
 }
 
 export interface StreamConnections {

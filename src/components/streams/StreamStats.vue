@@ -66,13 +66,13 @@
               <div class="mb-2">
                 <div class="text-caption text-grey">Average In</div>
                 <div class="text-body-2 font-weight-medium">
-                  {{ formatBytesPerSec(stats.avgThroughputIn) }}
+                  {{ formatBitsPerSec(stats.avgThroughputIn) }}
                 </div>
               </div>
               <div class="mb-2">
                 <div class="text-caption text-grey">Average Out</div>
                 <div class="text-body-2 font-weight-medium">
-                  {{ formatBytesPerSec(stats.avgThroughputOut) }}
+                  {{ formatBitsPerSec(stats.avgThroughputOut) }}
                 </div>
               </div>
               <v-divider class="my-2"></v-divider>
@@ -126,6 +126,7 @@
 import { computed } from 'vue'
 import { useStreamStore } from '@/stores/streams'
 import { type StreamStats } from '@/services/api/types'
+import { formatBytes, formatBitsPerSec } from '@/utils/formatters'
 
 interface Props {
   streamName: string
@@ -147,18 +148,6 @@ const totalViewers = computed(() => {
   if (!props.stats) return 0
   return Object.values(props.stats.connections).reduce((sum: number, count: unknown) => sum + (count as number), 0)
 })
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
-}
-
-function formatBytesPerSec(bytes: number): string {
-  return `${formatBytes(bytes)}/s`
-}
 
 function formatTime(timestamp: string): string {
   try {
