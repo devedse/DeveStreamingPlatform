@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { type StreamInfo } from '@/services/api/types'
 import { generateThumbnailUrl } from '@/services/api/endpoints'
@@ -75,9 +75,19 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 const thumbnailError = ref(false)
+const thumbnailKey = ref(0)
+
+// Watch for stream changes to reset error state and force thumbnail refresh
+watch(() => props.stream, () => {
+  thumbnailError.value = false
+  thumbnailKey.value++
+}, { deep: true })
 
 // Get the thumbnail URL from OME
+// The thumbnailKey ensures the URL regenerates (with new timestamp) when stream updates
 const thumbnailUrl = computed(() => {
+  // Reference thumbnailKey to make this reactive to stream changes
+  thumbnailKey.value
   if (thumbnailError.value) {
     return null
   }
