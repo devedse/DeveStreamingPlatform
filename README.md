@@ -130,9 +130,11 @@ This separation allows you to:
 
 The application uses nginx as a reverse proxy with authentication:
 - **Frontend → `/omeapi`** → nginx proxy (adds Basic Auth) → **OvenMediaEngine API** (`OME_API_URL`)
-- This allows the frontend to make API calls without CORS issues
-- The `OME_API_URL` and `OME_API_TOKEN` are only used by nginx internally and never exposed to the browser
+- **Frontend → `/thumbnails`** → nginx proxy → **OvenMediaEngine Thumbnails** (`OME_THUMBNAIL_URL`)
+- This allows the frontend to make API calls and fetch thumbnails without CORS issues
+- The `OME_API_URL`, `OME_API_TOKEN`, and `OME_THUMBNAIL_URL` are only used by nginx internally and never exposed to the browser
 - All API requests from the browser go to `/omeapi` which nginx forwards to the actual OME server with authentication
+- All thumbnail requests go to `/thumbnails` which nginx forwards to the OME thumbnail server
 - The API token is injected by the proxy layer (nginx in production, Vite in development)
 
 ## Local Development
@@ -173,4 +175,4 @@ VITE_OME_VHOST=default
 VITE_OME_APP=app
 ```
 
-The dev server will proxy API calls from `/omeapi` to `VITE_API_BASE_URL` and inject the authentication token.
+The dev server will proxy API calls from `/omeapi` to `VITE_API_BASE_URL` and inject the authentication token. Thumbnail requests to `/thumbnails` are proxied to `VITE_THUMBNAIL_URL`.

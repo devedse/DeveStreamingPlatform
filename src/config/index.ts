@@ -43,6 +43,7 @@ export const config = {
       llhlsUrl: getEnv('OME_PUBLISHER_LLHLS_URL', 'VITE_PUBLISHER_LLHLS_URL'),
     },
     // Thumbnail URL base (for fetching stream thumbnails)
-    thumbnailUrl: getEnv('OME_THUMBNAIL_URL', 'VITE_THUMBNAIL_URL'),
+    // Always use the nginx/vite proxy path
+    thumbnailUrl: getEnv('OME_THUMBNAIL_URL', 'VITE_THUMBNAIL_URL') || '/thumbnails',
   },
 }

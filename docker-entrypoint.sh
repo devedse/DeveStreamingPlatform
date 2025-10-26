@@ -30,9 +30,19 @@ fi
 export OME_API_TOKEN_BASE64=$(echo -n "$OME_API_TOKEN" | base64)
 echo "✓ OME API authentication configured"
 
+# Configure OME Thumbnail proxy URL (optional)
+if [ -n "$OME_THUMBNAIL_URL" ]; then
+    export OME_THUMBNAIL_PROXY_URL="${OME_THUMBNAIL_URL}"
+    echo "✓ OME Thumbnail proxy configured: ${OME_THUMBNAIL_URL}"
+else
+    # Use a dummy URL if not configured (nginx will still work)
+    export OME_THUMBNAIL_PROXY_URL="http://localhost:20080"
+    echo "⚠ WARNING: OME_THUMBNAIL_URL not set, thumbnails will not be available"
+fi
+
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
-envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
 mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 
 # Inject runtime environment variables into the built JavaScript
@@ -48,7 +58,7 @@ window.ENV_CONFIG = {
   OME_PROVIDER_SRT_URL: "${OME_PROVIDER_SRT_URL}",
   OME_PUBLISHER_WEBRTC_URL: "${OME_PUBLISHER_WEBRTC_URL}",
   OME_PUBLISHER_LLHLS_URL: "${OME_PUBLISHER_LLHLS_URL}",
-  OME_THUMBNAIL_URL: "${OME_THUMBNAIL_URL}",
+  OME_THUMBNAIL_URL: "/thumbnails",
 };
 EOF
 

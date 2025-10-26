@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), 'VITE_')
   const apiTarget = env.VITE_API_BASE_URL
   const apiToken = env.VITE_API_ACCESS_TOKEN
+  const thumbnailTarget = env.VITE_THUMBNAIL_URL
   
   // Only require VITE_API_BASE_URL in development mode (for proxy)
   if (mode === 'development' && !apiTarget) {
@@ -45,6 +46,11 @@ export default defineConfig(({ mode }) => {
                 proxyReq.setHeader('Authorization', `Basic ${base64Auth}`)
               })
             }
+          },
+          '/thumbnails': {
+            target: thumbnailTarget || 'http://localhost:20080',
+            changeOrigin: true,
+            rewrite: (path) => path.replace(/^\/thumbnails/, '')
           }
         }
       }
