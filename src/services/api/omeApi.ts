@@ -3,6 +3,7 @@ import { config } from '@/config'
 import { 
   type StreamListResponse, 
   type StreamStatsResponse,
+  type StreamDetailsResponse,
   type StartRecordingRequest,
   type StopRecordingRequest,
   type RecordingStateRequest,
@@ -71,6 +72,19 @@ class OmeApiClient {
       return response.data
     } catch (error) {
       console.error(`Failed to fetch stats for stream ${streamName}:`, error)
+      return null
+    }
+  }
+
+  // Get stream details including variants
+  async getStreamDetails(streamName: string): Promise<StreamDetailsResponse | null> {
+    try {
+      const response = await this.client.get<StreamDetailsResponse>(
+        endpoints.getStreamDetails(streamName)
+      )
+      return response.data
+    } catch (error) {
+      console.error(`Failed to fetch details for stream ${streamName}:`, error)
       return null
     }
   }

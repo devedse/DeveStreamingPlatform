@@ -18,6 +18,16 @@
         </v-chip>
         <h1 class="text-h6">{{ streamName }}</h1>
       </div>
+      <v-btn
+        variant="tonal"
+        size="small"
+        color="grey"
+        @click="openStreamDetailsDebug"
+        class="debug-btn"
+      >
+        <v-icon icon="mdi-cog" start></v-icon>
+        Advanced Stream Details
+      </v-btn>
     </div>
 
     <!-- Main content grid -->
@@ -50,7 +60,7 @@
 import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
-import { generatePlaybackSources } from '@/services/api/endpoints'
+import { generatePlaybackSources, generateStreamDetailsUrl } from '@/services/api/endpoints'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
 import StreamStats from '@/components/streams/StreamStats.vue'
 import RecordingControls from '@/components/streams/RecordingControls.vue'
@@ -63,6 +73,11 @@ const streamName = computed(() => route.params.name as string)
 const playbackSources = computed(() => generatePlaybackSources(streamName.value))
 const stats = computed(() => streamStore.activeStreamStats)
 const statsLoading = computed(() => streamStore.loading)
+
+function openStreamDetailsDebug() {
+  const url = generateStreamDetailsUrl(streamName.value)
+  window.open(url, '_blank')
+}
 
 onMounted(async () => {
   // Set active stream and fetch initial stats

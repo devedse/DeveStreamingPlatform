@@ -54,6 +54,79 @@ export interface StreamInfo {
   isRecording?: boolean
 }
 
+// Stream Details with variants
+export interface StreamDetailsResponse {
+  statusCode: number
+  message: string
+  response: StreamDetails
+}
+
+export interface StreamDetails {
+  name: string
+  input: {
+    createdTime: string
+    sourceType: string
+    sourceUrl: string
+    tracks: Track[]
+  }
+  outputs: Output[]
+}
+
+export interface Track {
+  id: number
+  name: string
+  type: 'Video' | 'Audio' | 'Data'
+  video?: VideoTrack
+  audio?: AudioTrack
+}
+
+export interface VideoTrack {
+  bitrate?: number
+  bypass: boolean
+  codec?: string
+  framerate?: number
+  height?: number
+  width?: number
+}
+
+export interface AudioTrack {
+  bitrate?: number
+  bypass: boolean
+  codec?: string
+  channel?: number
+  samplerate?: number
+}
+
+export interface Output {
+  name: string
+  tracks: Track[]
+  playlists: Playlist[]
+}
+
+export interface Playlist {
+  fileName: string
+  name: string
+  options: {
+    enableTsPackaging: boolean
+    hlsChunklistPathDepth: number
+    webrtcAutoAbr: boolean
+  }
+  renditions: Rendition[]
+}
+
+export interface Rendition {
+  name: string
+  videoVariantName: string
+  audioVariantName: string
+}
+
+export interface VariantOption {
+  name: string
+  displayName: string
+  type: 'Video' | 'Audio'
+  description: string
+}
+
 // Recording types
 export interface StartRecordingRequest {
   id: string

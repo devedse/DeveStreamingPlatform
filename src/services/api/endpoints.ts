@@ -8,10 +8,19 @@ export const endpoints = {
   getStreamStats: (streamName: string) => 
     `/v1/stats/current/vhosts/${config.ome.vhost}/apps/${config.ome.app}/streams/${streamName}`,
   
+  // Get detailed stream information including variants
+  getStreamDetails: (streamName: string) =>
+    `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}/streams/${streamName}`,
+  
   // Recording endpoints
   startRecording: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:startRecord`,
   stopRecording: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:stopRecord`,
   getRecordingState: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:records`,
+}
+
+// Generate full URL for stream details (useful for opening in browser)
+export const generateStreamDetailsUrl = (streamName: string) => {
+  return `${config.api.baseUrl}${endpoints.getStreamDetails(streamName)}`
 }
 
 // Generate streaming URLs for a given stream name (for ingestion/providers)

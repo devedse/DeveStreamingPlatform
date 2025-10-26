@@ -43,6 +43,33 @@
           </v-chip>
         </div>
 
+        <!-- Variant Selection (only show when not recording) -->
+        <div v-if="!isRecordingActive && availableVariants.length > 0" class="mb-4">
+          <v-select
+            v-model="selectedVariant"
+            :items="availableVariants"
+            item-title="displayName"
+            item-value="name"
+            label="Recording Quality"
+            hint="Select which video quality to record"
+            persistent-hint
+            variant="outlined"
+            density="comfortable"
+            :disabled="isRecordingActive || startLoading"
+          >
+            <template v-slot:item="{ item, props: itemProps }">
+              <v-list-item v-bind="itemProps">
+                <template v-slot:title>
+                  <div class="font-weight-medium">{{ item.raw.displayName }}</div>
+                </template>
+                <template v-slot:subtitle>
+                  <div class="text-caption">{{ item.raw.description }}</div>
+                </template>
+              </v-list-item>
+            </template>
+          </v-select>
+        </div>
+
         <!-- Recording duration (when recording) -->
         <div v-if="isRecording" class="recording-duration mb-4">
           <div class="duration-display">
@@ -60,6 +87,20 @@
           <div class="detail-item">
             <span class="text-caption text-grey">Started:</span>
             <span class="text-body-2">{{ formatTime(recordingState.createdTime) }}</span>
+          </div>
+          <div v-if="recordingState.stream.variantNames?.length > 0" class="detail-item">
+            <span class="text-caption text-grey">Variants:</span>
+            <div class="d-flex flex-wrap gap-1 mt-1">
+              <v-chip
+                v-for="variant in recordingState.stream.variantNames"
+                :key="variant"
+                size="x-small"
+                color="primary"
+                variant="tonal"
+              >
+                {{ variant }}
+              </v-chip>
+            </div>
           </div>
           <div v-if="recordingState.filePath" class="detail-item">
             <span class="text-caption text-grey">File:</span>
@@ -115,7 +156,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { omeApi } from '@/services/api/omeApi'
-import type { RecordingTask } from '@/services/api/types'
+import type { RecordingTask, VariantOption } from '@/services/api/types'
 
 interface Props {
   streamName: string
@@ -129,6 +170,9 @@ const startLoading = ref(false)
 const stopLoading = ref(false)
 const error = ref<string | null>(null)
 const recordingDuration = ref('00:00:00')
+const availableVariants = ref<VariantOption[]>([])
+const selectedVariant = ref<string>('')
+const audioVariant = ref<string>('')
 let pollingInterval: number | null = null
 let durationInterval: number | null = null
 
@@ -253,6 +297,57 @@ async function fetchRecordingState() {
   }
 }
 
+async function fetchStreamVariants() {
+  try {
+    const streamDetails = await omeApi.getStreamDetails(props.streamName)
+    if (!streamDetails?.response?.outputs?.[0]?.tracks) {
+      return
+    }
+
+    const tracks = streamDetails.response.outputs[0].tracks
+    const videoVariants: VariantOption[] = []
+
+    // Find all video tracks (variants)
+    for (const track of tracks) {
+      if (track.type === 'Video' && track.video) {
+        let displayName = track.name
+        let description = ''
+
+        if (track.video.bypass) {
+          displayName = 'Source (Original Quality)'
+          description = 'Original stream quality without transcoding'
+        } else if (track.video.height) {
+          const height = track.video.height
+          const fps = track.video.framerate ? Math.round(track.video.framerate) : 0
+          const bitrate = track.video.bitrate ? Math.round(track.video.bitrate / 1000) : 0
+          displayName = `${height}p${fps > 0 ? ` @ ${fps}fps` : ''}`
+          description = `${track.video.width}x${height}${bitrate > 0 ? `, ${bitrate} kbps` : ''}`
+        }
+
+        videoVariants.push({
+          name: track.name,
+          displayName,
+          type: 'Video',
+          description
+        })
+      } else if (track.type === 'Audio' && track.audio?.bypass) {
+        // Find the bypass audio track (source audio format)
+        audioVariant.value = track.name
+      }
+    }
+
+    availableVariants.value = videoVariants
+
+    // Set default selection to bypass_video (source quality)
+    if (videoVariants.length > 0) {
+      const bypassVariant = videoVariants.find(v => v.name === 'bypass_video')
+      selectedVariant.value = bypassVariant ? bypassVariant.name : (videoVariants[0]?.name || '')
+    }
+  } catch (e) {
+    console.error('Failed to fetch stream variants:', e)
+  }
+}
+
 async function handleStartRecording() {
   try {
     startLoading.value = true
@@ -261,10 +356,20 @@ async function handleStartRecording() {
     // Generate a unique ID for this recording
     const recordingId = `rec_${props.streamName}_${Date.now()}`
     
+    // Build variant names array - always include source audio if available
+    const variantNames: string[] = []
+    if (selectedVariant.value) {
+      variantNames.push(selectedVariant.value)
+    }
+    if (audioVariant.value) {
+      variantNames.push(audioVariant.value)
+    }
+    
     const result = await omeApi.startRecording({
       id: recordingId,
       stream: {
         name: props.streamName,
+        variantNames: variantNames.length > 0 ? variantNames : undefined,
       },
     })
     
@@ -346,6 +451,7 @@ function formatTime(timestamp: string): string {
 
 onMounted(() => {
   fetchRecordingState()
+  fetchStreamVariants()
   startPolling()
 })
 
