@@ -19,14 +19,27 @@
         
         <!-- Live badge overlay -->
         <div class="stream-overlay">
-          <v-chip
-            color="error"
-            size="small"
-            class="live-badge elevation-3"
-          >
-            <v-icon icon="mdi-circle" size="x-small" class="mr-1 pulse-animation"></v-icon>
-            LIVE
-          </v-chip>
+          <div class="left-badges">
+            <v-chip
+              color="error"
+              size="small"
+              class="live-badge elevation-3"
+            >
+              <v-icon icon="mdi-circle" size="x-small" class="mr-1 pulse-animation"></v-icon>
+              LIVE
+            </v-chip>
+            
+            <!-- Recording indicator -->
+            <v-chip
+              v-if="stream.isRecording"
+              color="red-darken-2"
+              size="small"
+              class="recording-badge elevation-3"
+            >
+              <v-icon icon="mdi-record-rec" size="x-small" class="mr-1 pulse-animation"></v-icon>
+              REC
+            </v-chip>
+          </div>
           
           <!-- Viewer count badge -->
           <v-chip
@@ -162,7 +175,20 @@ function goToStream() {
   z-index: 1;
 }
 
+.left-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
 .live-badge {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.recording-badge {
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.5px;

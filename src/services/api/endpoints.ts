@@ -7,6 +7,11 @@ export const endpoints = {
   // Get statistics for a specific stream
   getStreamStats: (streamName: string) => 
     `/v1/stats/current/vhosts/${config.ome.vhost}/apps/${config.ome.app}/streams/${streamName}`,
+  
+  // Recording endpoints
+  startRecording: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:startRecord`,
+  stopRecording: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:stopRecord`,
+  getRecordingState: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:records`,
 }
 
 // Generate streaming URLs for a given stream name (for ingestion/providers)

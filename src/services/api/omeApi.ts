@@ -1,6 +1,14 @@
 import axios, { type AxiosInstance } from 'axios'
 import { config } from '@/config'
-import { type StreamListResponse, type StreamStatsResponse } from './types'
+import { 
+  type StreamListResponse, 
+  type StreamStatsResponse,
+  type StartRecordingRequest,
+  type StopRecordingRequest,
+  type RecordingStateRequest,
+  type RecordingResponse,
+  type RecordingTask
+} from './types'
 import { endpoints } from './endpoints'
 
 class OmeApiClient {
@@ -64,6 +72,51 @@ class OmeApiClient {
     } catch (error) {
       console.error(`Failed to fetch stats for stream ${streamName}:`, error)
       return null
+    }
+  }
+
+  // Start recording a stream
+  async startRecording(request: StartRecordingRequest): Promise<RecordingTask | null> {
+    try {
+      const response = await this.client.post<RecordingResponse>(
+        endpoints.startRecording(),
+        request
+      )
+      // Response is a single RecordingTask object
+      return response.data.response as RecordingTask
+    } catch (error) {
+      console.error('Failed to start recording:', error)
+      return null
+    }
+  }
+
+  // Stop recording a stream
+  async stopRecording(request: StopRecordingRequest): Promise<boolean> {
+    try {
+      const response = await this.client.post<RecordingResponse>(
+        endpoints.stopRecording(),
+        request
+      )
+      return response.data.statusCode === 200
+    } catch (error) {
+      console.error('Failed to stop recording:', error)
+      return false
+    }
+  }
+
+  // Get recording state(s)
+  async getRecordingState(request?: RecordingStateRequest): Promise<RecordingTask[]> {
+    try {
+      const response = await this.client.post<RecordingResponse>(
+        endpoints.getRecordingState(),
+        request || {}
+      )
+      // Response is always an array
+      const data = response.data.response
+      return Array.isArray(data) ? data : [data]
+    } catch (error) {
+      console.error('Failed to fetch recording state:', error)
+      return []
     }
   }
 }

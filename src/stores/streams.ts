@@ -36,8 +36,12 @@ export const useStreamStore = defineStore('streams', () => {
         name,
         isLive: true, // If it's in the list, it's live
         viewerCount: 0,
+        isRecording: false,
       }))
 
+      // Fetch recording states
+      const recordings = await omeApi.getRecordingState()
+      
       // Fetch stats for each stream to get viewer counts
       await Promise.all(
         streams.value.map(async (stream: StreamInfo) => {
@@ -46,6 +50,13 @@ export const useStreamStore = defineStore('streams', () => {
             stream.stats = statsResponse.response
             stream.viewerCount = calculateViewerCount(statsResponse.response)
           }
+          
+          // Check if this stream is being recorded
+          const activeRecording = recordings.find(r => 
+            r.stream.name === stream.name && 
+            (r.state === 'recording' || r.state === 'ready' || r.state === 'stopping')
+          )
+          stream.isRecording = !!activeRecording
         })
       )
     } catch (err) {

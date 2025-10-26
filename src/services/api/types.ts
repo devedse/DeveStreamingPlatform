@@ -51,4 +51,51 @@ export interface StreamInfo {
   isLive: boolean
   viewerCount: number
   stats?: StreamStats
+  isRecording?: boolean
+}
+
+// Recording types
+export interface StartRecordingRequest {
+  id: string
+  stream: {
+    name: string
+    variantNames?: string[]
+  }
+  filePath?: string
+  infoPath?: string
+  interval?: number
+  schedule?: string
+  segmentationRule?: 'continuity' | 'discontinuity'
+}
+
+export interface StopRecordingRequest {
+  id: string
+}
+
+export interface RecordingStateRequest {
+  id?: string
+}
+
+export interface RecordingTask {
+  id: string
+  state: 'ready' | 'recording' | 'stopping' | 'stopped' | 'error'
+  vhost: string
+  app: string
+  stream: {
+    name: string
+    trackIds: number[]
+    variantNames: string[]
+  }
+  interval?: number
+  schedule?: string
+  segmentationRule?: 'continuity' | 'discontinuity'
+  createdTime: string
+  filePath?: string
+  infoPath?: string
+}
+
+export interface RecordingResponse {
+  statusCode: number
+  message: string
+  response: RecordingTask | RecordingTask[]
 }

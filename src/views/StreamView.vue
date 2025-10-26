@@ -37,6 +37,10 @@
           :stats="stats" 
           :loading="statsLoading"
         />
+        
+        <div class="mt-4">
+          <RecordingControls :stream-name="streamName" />
+        </div>
       </div>
     </div>
   </div>
@@ -49,6 +53,7 @@ import { useStreamStore } from '@/stores/streams'
 import { generatePlaybackSources } from '@/services/api/endpoints'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
 import StreamStats from '@/components/streams/StreamStats.vue'
+import RecordingControls from '@/components/streams/RecordingControls.vue'
 
 const route = useRoute()
 const router = useRouter()
