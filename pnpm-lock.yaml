@@ -15,8 +15,8 @@ importers:
         specifier: ^7.4.47
         version: 7.4.47
       axios:
-        specifier: ^1.12.2
-        version: 1.12.2
+        specifier: ^1.13.0
+        version: 1.13.0
       hls.js:
         specifier: ^1.6.13
         version: 1.6.13
@@ -292,7 +292,7 @@ packages:
     resolution: {integrity: sha512-+MaE752hU0wfPFJEUAIxqw18+20euHHdxVtMvbFcOEpjEyfqXH/5DCoTHiVJ0J29EhTJdoTkjEv5YBKU9dnoTw==}
     engines: {node: ^20.19.0 || >=22.12.0}
     peerDependencies:
-      vite: npm:rolldown-vite@7.1.14
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0
       vue: ^3.2.25
 
   '@volar/language-core@2.4.23':
@@ -380,8 +380,8 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
-  axios@1.12.2:
-    resolution: {integrity: sha512-vMJzPewAlRyOgxV2dU0Cuz2O8zzzx9VYtbJOaBgXFeLc4IV/Eg50n4LowmehOOR61S8ZMpc2K5Sa7g6A4jfkUw==}
+  axios@1.13.0:
+    resolution: {integrity: sha512-zt40Pz4zcRXra9CVV31KeyofwiNvAbJ5B6YPz9pMJ+yOSLikvPT4Yi5LjfgjRa9CawVYBaD1JQzIVcIvBejKeA==}
 
   birpc@2.6.1:
     resolution: {integrity: sha512-LPnFhlDpdSH6FJhJyn4M0kFO7vtQ5iPw24FnG0y21q09xC7e8+1LeR31S1MAIrDAHp4m7aas4bEkTDTvMAtebQ==}
@@ -782,7 +782,7 @@ packages:
     resolution: {integrity: sha512-I/wd6QS+DO6lHmuGoi1UTyvvBTQ2KDzQZ9oowJQEJ6OcjWfJnscYXx2ptm6S7fJSASuZT8jGRBL3LV4oS3LpaA==}
     engines: {node: ^18.0.0 || >=20.0.0}
     peerDependencies:
-      vite: npm:rolldown-vite@7.1.14
+      vite: '>=5'
       vue: ^3.0.0
       vuetify: ^3.0.0
 
@@ -1101,7 +1101,7 @@ snapshots:
       typescript: 5.9.3
       vue: 3.5.22(typescript@5.9.3)
 
-  '@vuetify/loader-shared@2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5(typescript@5.9.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.22(typescript@5.9.3)))':
+  '@vuetify/loader-shared@2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)':
     dependencies:
       upath: 2.0.1
       vue: 3.5.22(typescript@5.9.3)
@@ -1113,7 +1113,7 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.12.2:
+  axios@1.13.0:
     dependencies:
       follow-redirects: 1.15.11
       form-data: 4.0.4
@@ -1443,7 +1443,7 @@ snapshots:
 
   vite-plugin-vuetify@2.1.2(rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2))(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5):
     dependencies:
-      '@vuetify/loader-shared': 2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5(typescript@5.9.3)(vite-plugin-vuetify@2.1.2)(vue@3.5.22(typescript@5.9.3)))
+      '@vuetify/loader-shared': 2.1.1(vue@3.5.22(typescript@5.9.3))(vuetify@3.10.5)
       debug: 4.4.3
       upath: 2.0.1
       vite: rolldown-vite@7.1.14(@types/node@24.7.2)(sass@1.93.2)
