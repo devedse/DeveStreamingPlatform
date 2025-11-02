@@ -17,7 +17,7 @@
       color="surface-variant"
       variant="flat"
       size="small"
-      :href="`https://github.com/devedse/DeveStreamingPlatform/releases/tag/${appVersion}`"
+      href="https://github.com/devedse/DeveStreamingPlatform/releases"
       target="_blank"
       rel="noopener noreferrer"
       style="cursor: pointer; text-decoration: none;"
