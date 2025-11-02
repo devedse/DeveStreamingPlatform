@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24-alpine AS build
+FROM node:25-alpine AS build
 
 # Accept build version argument
 ARG BUILD_VERSION=dev
