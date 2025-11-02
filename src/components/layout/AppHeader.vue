@@ -11,12 +11,16 @@
 
     <v-spacer></v-spacer>
 
-    <!-- Version badge -->
+    <!-- Version badge - clickable link to GitHub releases -->
     <v-chip
       class="mr-2"
       color="surface-variant"
       variant="flat"
       size="small"
+      :href="`https://github.com/devedse/DeveStreamingPlatform/releases/tag/${appVersion}`"
+      target="_blank"
+      rel="noopener noreferrer"
+      style="cursor: pointer; text-decoration: none;"
     >
       <v-icon icon="mdi-information-outline" start size="small"></v-icon>
       v{{ appVersion }}
