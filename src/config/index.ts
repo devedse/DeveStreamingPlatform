@@ -20,6 +20,11 @@ const getEnv = (runtimeKey: keyof NonNullable<Window['ENV_CONFIG']>, buildKey: s
   return window.ENV_CONFIG?.[runtimeKey] || import.meta.env[buildKey] || ''
 }
 
+// Warn if ENV_CONFIG is not loaded (race condition detection)
+if (typeof window !== 'undefined' && !window.ENV_CONFIG) {
+  console.warn('⚠️ ENV_CONFIG not loaded yet! This may cause empty URLs. env-config.js should load before main.ts')
+}
+
 export const config = {
   api: {
     // Always use the nginx proxy path

@@ -46,6 +46,20 @@ export const generateStreamUrls = (streamName: string) => {
 
 // Generate playback URLs for OvenPlayer (multiple sources for protocol selection)
 export const generatePlaybackSources = (streamName: string) => {
+  // Validate that publisher URLs are configured
+  if (!config.ome.publishers.webrtcUrl) {
+    console.error('❌ ERROR: OME_PUBLISHER_WEBRTC_URL is not configured!');
+    console.error('ENV_CONFIG:', window.ENV_CONFIG);
+    console.error('This is likely a race condition - env-config.js may not have loaded before the app initialized.');
+    throw new Error('Publisher WebRTC URL is not configured. Check console for details.');
+  }
+
+  if (!config.ome.publishers.llhlsUrl) {
+    console.error('❌ ERROR: OME_PUBLISHER_LLHLS_URL is not configured!');
+    console.error('ENV_CONFIG:', window.ENV_CONFIG);
+    throw new Error('Publisher LLHLS URL is not configured. Check console for details.');
+  }
+
   // For WebRTC with transcodes, use the playlist name (multistream_webrtc) instead of just stream name
   const webrtcUrl = `${config.ome.publishers.webrtcUrl}/${config.ome.app}/${streamName}/multistream_webrtc`
   const llhlsUrl = `${config.ome.publishers.llhlsUrl}/${config.ome.app}/${streamName}/multistream_llhls.m3u8`
