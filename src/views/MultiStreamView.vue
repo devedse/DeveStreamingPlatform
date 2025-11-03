@@ -56,7 +56,8 @@
           <OvenPlayerComponent
             :stream-name="stream.name"
             :sources="getCachedSources(stream.name)"
-            :autoplay="false"
+            :autoplay="true"
+            :mute="true"
           />
         </div>
       </div>

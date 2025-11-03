@@ -18,10 +18,12 @@ interface Props {
   sources: Source[]
   streamName: string
   autoplay?: boolean
+  mute?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   autoplay: true,
+  mute: false,
 })
 
 // Generate a unique ID for this player instance using stream name
@@ -46,8 +48,8 @@ function initPlayer() {
       sources: props.sources,
       autoStart: props.autoplay,
       controls: true,
-      mute: false,
-      //volume: 50,
+      mute: props.mute,
+      volume: 0,
       showBigPlayButton: true,
       aspectRatio: 'auto',
       autoFallback: false,

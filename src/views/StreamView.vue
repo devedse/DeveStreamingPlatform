@@ -38,6 +38,7 @@
             :sources="playbackSources"
             :stream-name="streamName"
             :autoplay="true"
+            :mute="false"
           />
         </v-card>
       </div>
