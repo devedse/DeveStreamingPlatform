@@ -36,6 +36,7 @@
         <v-card elevation="2" class="player-card">
           <OvenPlayerComponent
             :sources="playbackSources"
+            :stream-name="streamName"
             :autoplay="true"
           />
         </v-card>

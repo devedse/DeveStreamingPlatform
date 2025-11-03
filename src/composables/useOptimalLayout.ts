@@ -177,202 +177,223 @@ function evaluateGridConfig(
   const { rows, cols } = config
   const streamCount = aspectRatios.length
 
-  // Account for gaps and borders
   const GAP_SIZE = 2
   const BORDER_SIZE = 2
-  const totalHorizontalGaps = (cols - 1) * GAP_SIZE + cols * BORDER_SIZE
-  const totalVerticalGaps = (rows - 1) * GAP_SIZE + rows * BORDER_SIZE
-  
-  // Available space after accounting for gaps and borders
-  const availableWidth = containerWidth - totalHorizontalGaps
-  const availableHeight = containerHeight - totalVerticalGaps
 
-  // Group streams by their grid position to understand row/col requirements
-  const streamsByRow: number[][] = []
-  const streamsByCol: number[][] = []
-  
-  for (let i = 0; i < streamCount; i++) {
-    const row = Math.floor(i / cols)
-    const col = i % cols
-    
-    if (!streamsByRow[row]) streamsByRow[row] = []
-    if (!streamsByCol[col]) streamsByCol[col] = []
-    
-    streamsByRow[row].push(i)
-    streamsByCol[col].push(i)
-  }
-  
-  // Calculate optimal row heights and column widths
-  // We want to maximize total pixels while respecting aspect ratios
-  const rowHeights: number[] = new Array(rows).fill(0)
-  const colWidths: number[] = new Array(cols).fill(0)
-  
-  // Strategy: iteratively adjust row heights and column widths to maximize usage
-  // Start with equal distribution
-  const baseRowHeight = availableHeight / rows
-  const baseColWidth = availableWidth / cols
-  
+  const horizontalSpacing = Math.max(cols - 1, 0) * GAP_SIZE + cols * BORDER_SIZE
+  const verticalSpacing = Math.max(rows - 1, 0) * GAP_SIZE + rows * BORDER_SIZE
+
+  const availableWidth = Math.max(containerWidth - horizontalSpacing, 0)
+  const availableHeight = Math.max(containerHeight - verticalSpacing, 0)
+
+  const cellWidth = cols > 0 ? availableWidth / cols : 0
+  const cellHeight = rows > 0 ? availableHeight / rows : 0
+
+  const rowHeights = Array.from({ length: rows }, () => 0)
+  const colWidths = Array.from({ length: cols }, () => 0)
+
   for (let i = 0; i < streamCount; i++) {
     const aspectRatio = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
     const row = Math.floor(i / cols)
     const col = i % cols
-    
-    // Calculate what size this stream would be in a cell of baseRowHeight x baseColWidth
-    let streamWidth: number
-    let streamHeight: number
-    
-    if (baseColWidth / baseRowHeight > aspectRatio) {
-      // Cell is wider than stream - height-constrained
-      streamHeight = baseRowHeight
-      streamWidth = streamHeight * aspectRatio
-    } else {
-      // Cell is taller than stream - width-constrained
-      streamWidth = baseColWidth
-      streamHeight = streamWidth / aspectRatio
+
+    const fitted = fitWithinBounds(aspectRatio, cellWidth, cellHeight)
+
+    if (row < rowHeights.length) {
+      const currentHeight = rowHeights[row] ?? 0
+      rowHeights[row] = Math.max(currentHeight, fitted.height)
     }
-    
-    // Update the row height and column width requirements
-    rowHeights[row] = Math.max(rowHeights[row] ?? 0, streamHeight)
-    colWidths[col] = Math.max(colWidths[col] ?? 0, streamWidth)
+    if (col < colWidths.length) {
+      const currentWidth = colWidths[col] ?? 0
+      colWidths[col] = Math.max(currentWidth, fitted.width)
+    }
   }
-  
-  // Now scale everything up to fill the available space
-  const totalCalculatedWidth = colWidths.reduce((sum, w) => sum + w, 0)
-  const totalCalculatedHeight = rowHeights.reduce((sum, h) => sum + h, 0)
-  
-  const widthScale = totalCalculatedWidth > 0 ? availableWidth / totalCalculatedWidth : 1
-  const heightScale = totalCalculatedHeight > 0 ? availableHeight / totalCalculatedHeight : 1
-  
-  // Use the minimum scale to ensure we fit in both dimensions
-  const scale = Math.min(widthScale, heightScale)
-  
-  // Apply the scale
-  let scaledRowHeights = rowHeights.map(h => h * scale)
-  let scaledColWidths = colWidths.map(w => w * scale)
-  
-  // Redistribution phase: determine which dimension is constrained and boost the other
-  const scaledTotalWidth = scaledColWidths.reduce((sum, w) => sum + w, 0)
-  const scaledTotalHeight = scaledRowHeights.reduce((sum, h) => sum + h, 0)
-  
-  const widthLeftover = availableWidth - scaledTotalWidth
-  const heightLeftover = availableHeight - scaledTotalHeight
-  
-  // Redistribute leftover space intelligently
-  if (Math.abs(heightLeftover) < 1 && widthLeftover > 1) {
-    // Height-constrained: calculate exact widths needed at current row height
-    const rowHeight = scaledRowHeights[0] ?? 0
-    const exactStreamWidths: number[] = []
-    let totalExactWidth = 0
-    
-    for (let i = 0; i < streamCount; i++) {
-      const aspectRatio = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-      const exactWidth = rowHeight * aspectRatio
-      exactStreamWidths.push(exactWidth)
-      totalExactWidth += exactWidth
-    }
-    
-    const unused = availableWidth - totalExactWidth
-    
-    if (unused >= 0) {
-      // Give unused width to the widest stream
-      if (unused > 0) {
-        let widestIdx = 0
-        let maxAR = aspectRatios[0] ?? DEFAULT_ASPECT_RATIO
-        for (let i = 1; i < streamCount; i++) {
-          const ar = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-          if (ar > maxAR) {
-            maxAR = ar
-            widestIdx = i
-          }
-        }
-        exactStreamWidths[widestIdx] = exactStreamWidths[widestIdx]! + unused
-      }
-      
-      for (let col = 0; col < cols; col++) {
-        scaledColWidths[col] = exactStreamWidths[col] ?? 0
-      }
-    } else {
-      // Streams are too wide: shrink row height to fit
-      const neededRowHeight = availableWidth / exactStreamWidths.reduce((sum, _w, i) => {
-        const ar = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-        return sum + ar
-      }, 0)
-      scaledRowHeights = scaledRowHeights.map(() => neededRowHeight)
-      
-      // Recalculate stream widths at new row height
-      let totalWidth = 0
-      for (let i = 0; i < streamCount; i++) {
-        const aspectRatio = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-        const streamWidth = neededRowHeight * aspectRatio
-        exactStreamWidths[i] = streamWidth
-        totalWidth += streamWidth
-      }
-      
-      // Give any remaining pixels to widest stream
-      const finalUnused = availableWidth - totalWidth
-      if (Math.abs(finalUnused) > 0.1) {
-        let widestIdx = 0
-        let maxAR = aspectRatios[0] ?? DEFAULT_ASPECT_RATIO
-        for (let i = 1; i < streamCount; i++) {
-          const ar = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-          if (ar > maxAR) {
-            maxAR = ar
-            widestIdx = i
-          }
-        }
-        exactStreamWidths[widestIdx] = exactStreamWidths[widestIdx]! + finalUnused
-      }
-      
-      for (let col = 0; col < cols; col++) {
-        scaledColWidths[col] = exactStreamWidths[col] ?? 0
-      }
-    }
-  } else if (Math.abs(widthLeftover) < 1 && heightLeftover > 1) {
-    // Width-constrained: boost row heights
-    const heightBoost = availableHeight / scaledTotalHeight
-    scaledRowHeights = scaledRowHeights.map(h => h * heightBoost)
-  }
-  
-  // Create final layouts
+
+  const scaled = scaleDimensions(colWidths, rowHeights, availableWidth, availableHeight)
+
+  const redistributed = redistributeSpace({
+    colWidths: scaled.colWidths,
+    rowHeights: scaled.rowHeights,
+    availableWidth,
+    availableHeight,
+    aspectRatios,
+    cols,
+  })
+
   const streamLayouts: StreamLayout[] = []
   let totalPixels = 0
-  
+
   for (let i = 0; i < streamCount; i++) {
     const aspectRatio = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
     const row = Math.floor(i / cols)
     const col = i % cols
-    
-    const cellWidth = scaledColWidths[col] ?? 0
-    const cellHeight = scaledRowHeights[row] ?? 0
-    
-    // Fit stream in cell maintaining aspect ratio
-    let streamWidth: number
-    let streamHeight: number
-    
-    if (cellWidth / cellHeight > aspectRatio) {
-      streamHeight = cellHeight
-      streamWidth = streamHeight * aspectRatio
-    } else {
-      streamWidth = cellWidth
-      streamHeight = streamWidth / aspectRatio
-    }
-    
+
+    const targetWidth = redistributed.colWidths[col] ?? 0
+    const targetHeight = redistributed.rowHeights[row] ?? 0
+
+    const { width, height } = fitWithinBounds(aspectRatio, targetWidth, targetHeight)
+
     streamLayouts.push({
       streamIndex: i,
-      width: streamWidth,
-      height: streamHeight,
+      width,
+      height,
       gridRow: row + 1,
       gridCol: col + 1,
     })
-    
-    totalPixels += streamWidth * streamHeight
+
+    totalPixels += width * height
   }
 
   return {
     gridConfig: config,
     streamLayouts,
     totalPixels,
-    colWidths: scaledColWidths,
-    rowHeights: scaledRowHeights,
+    colWidths: redistributed.colWidths,
+    rowHeights: redistributed.rowHeights,
   }
+}
+
+function fitWithinBounds(aspectRatio: number, maxWidth: number, maxHeight: number) {
+  if (maxWidth <= 0 || maxHeight <= 0) {
+    return { width: 0, height: 0 }
+  }
+
+  const widthBasedHeight = maxWidth / aspectRatio
+
+  if (widthBasedHeight <= maxHeight) {
+    return { width: maxWidth, height: widthBasedHeight }
+  }
+
+  const heightBasedWidth = maxHeight * aspectRatio
+  return { width: heightBasedWidth, height: maxHeight }
+}
+
+function scaleDimensions(
+  colWidths: number[],
+  rowHeights: number[],
+  availableWidth: number,
+  availableHeight: number
+) {
+  const totalWidth = colWidths.reduce((sum, width) => sum + width, 0)
+  const totalHeight = rowHeights.reduce((sum, height) => sum + height, 0)
+
+  const widthScale = totalWidth > 0 ? availableWidth / totalWidth : 1
+  const heightScale = totalHeight > 0 ? availableHeight / totalHeight : 1
+  const scale = Math.min(widthScale, heightScale)
+
+  return {
+    colWidths: colWidths.map(width => width * scale),
+    rowHeights: rowHeights.map(height => height * scale),
+    widthScale,
+    heightScale,
+    scale,
+  }
+}
+
+interface RedistributionInput {
+  colWidths: number[]
+  rowHeights: number[]
+  availableWidth: number
+  availableHeight: number
+  aspectRatios: number[]
+  cols: number
+}
+
+function redistributeSpace({
+  colWidths,
+  rowHeights,
+  availableWidth,
+  availableHeight,
+  aspectRatios,
+  cols,
+}: RedistributionInput) {
+  const adjustedColWidths = [...colWidths]
+  const adjustedRowHeights = [...rowHeights]
+
+  const totalWidth = adjustedColWidths.reduce((sum, width) => sum + width, 0)
+  const totalHeight = adjustedRowHeights.reduce((sum, height) => sum + height, 0)
+
+  const widthLeftover = availableWidth - totalWidth
+  const heightLeftover = availableHeight - totalHeight
+
+  if (Math.abs(heightLeftover) < 1 && widthLeftover > 1) {
+    const baseRowHeight = adjustedRowHeights[0] ?? 0
+    if (baseRowHeight > 0) {
+      const exactStreamWidths = aspectRatios.map(aspect => baseRowHeight * (aspect ?? DEFAULT_ASPECT_RATIO))
+      const totalExactWidth = exactStreamWidths.reduce((sum, width) => sum + width, 0)
+      const unused = availableWidth - totalExactWidth
+
+      if (unused >= 0) {
+        if (unused > 0) {
+          const widestIdx = findWidestAspectIndex(aspectRatios)
+          exactStreamWidths[widestIdx] = (exactStreamWidths[widestIdx] ?? 0) + unused
+        }
+
+        const widthsByColumn = combineStreamsPerColumn(exactStreamWidths, cols)
+        widthsByColumn.forEach((width, index) => {
+          adjustedColWidths[index] = width
+        })
+      } else {
+        const aspectSum = aspectRatios.reduce(
+          (sum, aspect) => sum + (aspect ?? DEFAULT_ASPECT_RATIO),
+          0
+        )
+        const neededRowHeight = aspectSum > 0 ? availableWidth / aspectSum : baseRowHeight
+        adjustedRowHeights.fill(neededRowHeight)
+
+        const recalculatedWidths = aspectRatios.map(
+          aspect => neededRowHeight * (aspect ?? DEFAULT_ASPECT_RATIO)
+        )
+        const recalculatedTotal = recalculatedWidths.reduce((sum, width) => sum + width, 0)
+        const finalUnused = availableWidth - recalculatedTotal
+
+        if (Math.abs(finalUnused) > 0.1) {
+          const widestIdx = findWidestAspectIndex(aspectRatios)
+          recalculatedWidths[widestIdx] = (recalculatedWidths[widestIdx] ?? 0) + finalUnused
+        }
+
+        const widthsByColumn = combineStreamsPerColumn(recalculatedWidths, cols)
+        widthsByColumn.forEach((width, index) => {
+          adjustedColWidths[index] = width
+        })
+      }
+    }
+  } else if (Math.abs(widthLeftover) < 1 && heightLeftover > 1) {
+    const totalRowHeight = adjustedRowHeights.reduce((sum, height) => sum + height, 0)
+    const heightBoost = totalRowHeight > 0 ? availableHeight / totalRowHeight : 1
+    adjustedRowHeights.forEach((height, index) => {
+      adjustedRowHeights[index] = height * heightBoost
+    })
+  }
+
+  return {
+    colWidths: adjustedColWidths,
+    rowHeights: adjustedRowHeights,
+  }
+}
+
+function combineStreamsPerColumn(streamWidths: number[], cols: number) {
+  const widths = Array.from({ length: cols }, () => 0)
+  for (let i = 0; i < streamWidths.length; i++) {
+    const col = i % cols
+    const current = widths[col] ?? 0
+    const next = streamWidths[i] ?? 0
+    widths[col] = Math.max(current, next)
+  }
+  return widths
+}
+
+function findWidestAspectIndex(aspectRatios: number[]) {
+  let widestIdx = 0
+  let maxAspect = aspectRatios[0] ?? DEFAULT_ASPECT_RATIO
+
+  for (let i = 1; i < aspectRatios.length; i++) {
+    const aspect = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
+    if (aspect > maxAspect) {
+      maxAspect = aspect
+      widestIdx = i
+    }
+  }
+
+  return widestIdx
 }

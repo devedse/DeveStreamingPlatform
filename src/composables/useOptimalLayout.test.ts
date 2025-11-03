@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { ref } from 'vue'
 import { useOptimalLayout } from './useOptimalLayout'
 

@@ -30,62 +30,53 @@ export const useStreamStore = defineStore('streams', () => {
     error.value = null
     try {
       const streamNames = await omeApi.getStreams()
-      const streamNamesSet = new Set(streamNames)
-      
-      // Remove streams that are no longer available
-      for (let i = streams.value.length - 1; i >= 0; i--) {
-        if (!streamNamesSet.has(streams.value[i].name)) {
-          streams.value.splice(i, 1)
-        }
-      }
-      
-      // Add new streams
-      const existingNames = new Set(streams.value.map(s => s.name))
-      for (const name of streamNames) {
-        if (!existingNames.has(name)) {
-          streams.value.push({
-            name,
-            isLive: true,
-            viewerCount: 0,
-            isRecording: false,
-          })
-        }
-      }
+      const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
 
-      // Fetch recording states
+      const nextStreams: StreamInfo[] = streamNames.map((name) => {
+        const existing = existingMap.get(name)
+        return {
+          name,
+          isLive: true,
+          viewerCount: existing?.viewerCount ?? 0,
+          isRecording: existing?.isRecording ?? false,
+          stats: existing?.stats,
+          width: existing?.width,
+          height: existing?.height,
+          aspectRatio: existing?.aspectRatio,
+        }
+      })
+
+      streams.value = nextStreams
+
       const recordings = await omeApi.getRecordingState()
-      
-      // Fetch stats for each stream to get viewer counts
+
       await Promise.all(
-        streams.value.map(async (stream: StreamInfo) => {
-          const statsResponse = await omeApi.getStreamStats(stream.name)
+        streams.value.map(async (stream) => {
+          const [statsResponse, detailsResponse] = await Promise.all([
+            omeApi.getStreamStats(stream.name),
+            omeApi.getStreamDetails(stream.name),
+          ])
+
           if (statsResponse?.response) {
             stream.stats = statsResponse.response
             stream.viewerCount = calculateViewerCount(statsResponse.response)
           }
-          
-          // Fetch stream details to get resolution
-          const detailsResponse = await omeApi.getStreamDetails(stream.name)
-          if (detailsResponse?.response) {
-            // Find the first video track to get resolution
-            const videoTrack = detailsResponse.response.input.tracks.find(
-              track => track.type === 'Video' && track.video
-            )
-            if (videoTrack?.video) {
-              stream.width = videoTrack.video.width
-              stream.height = videoTrack.video.height
-              stream.aspectRatio = videoTrack.video.width && videoTrack.video.height
-                ? videoTrack.video.width / videoTrack.video.height
-                : DEFAULT_ASPECT_RATIO
-            }
-          }
-          
-          // Check if this stream is being recorded
-          const activeRecording = recordings.find(r => 
-            r.stream.name === stream.name && 
-            (r.state === 'recording' || r.state === 'ready' || r.state === 'stopping')
+
+          const videoTrack = detailsResponse?.response?.input.tracks.find(
+            (track) => track.type === 'Video' && track.video
           )
-          stream.isRecording = !!activeRecording
+
+          if (videoTrack?.video) {
+            const { width, height } = videoTrack.video
+            stream.width = width
+            stream.height = height
+            stream.aspectRatio = width && height ? width / height : DEFAULT_ASPECT_RATIO
+          }
+
+          stream.isRecording = recordings.some((recording) =>
+            recording.stream.name === stream.name &&
+            ['recording', 'ready', 'stopping'].includes(recording.state)
+          )
         })
       )
     } catch (err) {
