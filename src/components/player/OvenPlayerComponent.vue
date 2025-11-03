@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 import OvenPlayer from 'ovenplayer'
 
 interface Source {
@@ -36,12 +36,9 @@ onBeforeUnmount(() => {
   destroyPlayer()
 })
 
-watch(() => props.sources, () => {
-  if (player) {
-    destroyPlayer()
-    initPlayer()
-  }
-}, { deep: true })
+// Note: We don't watch sources changes because for a given stream,
+// the sources URLs don't change. The component will be recreated
+// (via key change) if we switch to a different stream.
 
 function initPlayer() {
   try {

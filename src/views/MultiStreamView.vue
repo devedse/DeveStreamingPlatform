@@ -51,9 +51,8 @@
             </span>
           </div>
           <OvenPlayerComponent
-            :key="`player-${stream.name}`"
             :stream-name="stream.name"
-            :sources="generatePlaybackSources(stream.name)"
+            :sources="getCachedSources(stream.name)"
             :autoplay="false"
           />
         </div>
@@ -241,6 +240,16 @@ let isInitialized = ref(false)
 
 const availableStreams = computed(() => streamStore.liveStreams)
 
+// Cache sources by stream name to prevent recreating arrays on every render
+const sourcesCache = new Map<string, ReturnType<typeof generatePlaybackSources>>()
+
+function getCachedSources(streamName: string) {
+  if (!sourcesCache.has(streamName)) {
+    sourcesCache.set(streamName, generatePlaybackSources(streamName))
+  }
+  return sourcesCache.get(streamName)!
+}
+
 // Auto-hide controls after 3 seconds of mouse inactivity
 function handleMouseMove() {
   showControls.value = true
@@ -334,45 +343,59 @@ watch(tempSelectionMode, (newMode) => {
 
 // Watch for changes in available streams and update selection based on mode
 watch(availableStreams, (newStreams, oldStreams) => {
-  // Skip if not initialized yet (to avoid interfering with initial load from URL)
   if (!isInitialized.value) return
   
-  // Only update if stream names have actually changed (additions or removals)
+  // Check if stream list actually changed
   const newStreamNames = new Set(newStreams.map(s => s.name))
   const oldStreamNames = new Set(oldStreams?.map(s => s.name) || [])
   
-  // Check if there are any additions or removals
   const hasChanges = newStreamNames.size !== oldStreamNames.size ||
     [...newStreamNames].some(name => !oldStreamNames.has(name)) ||
     [...oldStreamNames].some(name => !newStreamNames.has(name))
   
-  if (!hasChanges) {
-    // No actual stream additions/removals, just skip
-    return
-  }
+  if (!hasChanges) return
   
+  // Update selectedStreams based on mode
   if (selectionMode.value === 'all') {
-    // Auto-add all new streams
-    selectedStreams.value = [...newStreams]
+    // Remove stopped streams
+    for (let i = selectedStreams.value.length - 1; i >= 0; i--) {
+      if (!newStreamNames.has(selectedStreams.value[i].name)) {
+        selectedStreams.value.splice(i, 1)
+      }
+    }
+    // Add new streams
+    const selectedNames = new Set(selectedStreams.value.map(s => s.name))
+    for (const stream of newStreams) {
+      if (!selectedNames.has(stream.name)) {
+        selectedStreams.value.push(stream)
+      }
+    }
   } else if (selectionMode.value === 'all-except') {
-    // Add all streams except excluded ones
-    selectedStreams.value = newStreams.filter(
-      stream => !excludedStreamNames.value.includes(stream.name)
-    )
-    // Update excluded list - remove streams that no longer exist
-    excludedStreamNames.value = excludedStreamNames.value.filter(
-      name => newStreamNames.has(name)
-    )
-    // Update URL to reflect cleaned up exclusions
+    // Remove stopped streams
+    for (let i = selectedStreams.value.length - 1; i >= 0; i--) {
+      if (!newStreamNames.has(selectedStreams.value[i].name)) {
+        selectedStreams.value.splice(i, 1)
+      }
+    }
+    // Add new streams (except excluded)
+    const selectedNames = new Set(selectedStreams.value.map(s => s.name))
+    for (const stream of newStreams) {
+      if (!excludedStreamNames.value.includes(stream.name) && !selectedNames.has(stream.name)) {
+        selectedStreams.value.push(stream)
+      }
+    }
+    // Clean up excluded list
+    excludedStreamNames.value = excludedStreamNames.value.filter(name => newStreamNames.has(name))
     updateUrl()
   } else if (selectionMode.value === 'custom') {
-    // In custom mode, remove streams that are no longer available
-    const prevSelectedCount = selectedStreams.value.length
-    selectedStreams.value = selectedStreams.value.filter(
-      stream => newStreamNames.has(stream.name)
-    )
-    // Update URL if streams were removed
-    if (prevSelectedCount !== selectedStreams.value.length) {
+    // Remove stopped streams only
+    const prevCount = selectedStreams.value.length
+    for (let i = selectedStreams.value.length - 1; i >= 0; i--) {
+      if (!newStreamNames.has(selectedStreams.value[i].name)) {
+        selectedStreams.value.splice(i, 1)
+      }
+    }
+    if (prevCount !== selectedStreams.value.length) {
       updateUrl()
     }
   }
