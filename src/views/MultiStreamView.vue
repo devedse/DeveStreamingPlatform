@@ -31,15 +31,20 @@
       </div>
     </transition>
 
-    <!-- Stream grid - maximizes screen space -->
+    <!-- Stream grid - optimal layout -->
     <div 
       v-if="selectedStreams.length > 0"
       class="streams-grid"
+      :style="{
+        gridTemplateColumns,
+        gridTemplateRows,
+      }"
     >
       <div
-        v-for="stream in selectedStreams"
+        v-for="(stream, index) in selectedStreams"
         :key="stream.name"
         class="stream-cell"
+        :style="streamStyles[index]"
       >
         <div class="stream-cell-inner">
           <div class="stream-label">
@@ -220,6 +225,7 @@ import { useStreamStore } from '@/stores/streams'
 import { generatePlaybackSources } from '@/services/api/endpoints'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
 import type { StreamInfo } from '@/services/api/types'
+import { useOptimalLayout } from '@/composables/useOptimalLayout'
 
 type SelectionMode = 'all' | 'all-except' | 'custom'
 
@@ -237,6 +243,9 @@ let hideControlsTimeout: number | null = null
 let isInitialized = ref(false)
 
 const availableStreams = computed(() => streamStore.liveStreams)
+
+// Use optimal layout calculation
+const { gridTemplateColumns, gridTemplateRows, streamStyles } = useOptimalLayout(selectedStreams)
 
 // Cache sources by stream name to prevent recreating arrays on every render
 const sourcesCache = new Map<string, ReturnType<typeof generatePlaybackSources>>()
@@ -524,29 +533,18 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
-/* Grid layouts - responsive auto-fit grid */
+/* Grid layouts - optimal dynamic layout */
 .streams-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  grid-auto-rows: 1fr;
   gap: 2px;
   width: 100%;
   height: 100%;
   padding: 0;
   margin: 0;
   overflow: hidden;
-}
-
-/* Single stream - full screen */
-.streams-grid:has(.stream-cell:only-child) {
-  grid-template-columns: 1fr;
-  grid-template-rows: 1fr;
-}
-
-/* Two streams - responsive split */
-.streams-grid:has(.stream-cell:nth-child(2):last-child) {
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  grid-template-rows: 1fr;
+  justify-content: center;
+  align-content: center;
+  /* grid-template-columns and grid-template-rows set dynamically via :style */
 }
 
 /* Stream cell */
@@ -557,18 +555,12 @@ onBeforeUnmount(() => {
   overflow: hidden;
   background: #000;
   border: 1px solid #222;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .stream-cell-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 /* Stream label overlay */
@@ -594,26 +586,37 @@ onBeforeUnmount(() => {
   opacity: 0.8;
 }
 
-/* Ensure OvenPlayer fills the cell while maintaining aspect ratio */
+/* Ensure OvenPlayer fills the cell completely without black bars */
 .stream-cell-inner :deep(.oven-player-wrapper) {
   width: 100% !important;
   height: 100% !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 }
 
 .stream-cell-inner :deep(.oven-player-container) {
-  max-width: 100% !important;
-  max-height: 100% !important;
-  width: auto !important;
-  height: auto !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .stream-cell-inner :deep(video) {
   object-fit: contain !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ensure OvenPlayer controls overlay the video instead of adding height */
+.stream-cell-inner :deep(.ovenplayer) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.stream-cell-inner :deep(.op-wrapper) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.stream-cell-inner :deep(.op-con) {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Dialog styling */

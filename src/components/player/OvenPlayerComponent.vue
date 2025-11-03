@@ -93,20 +93,13 @@ defineExpose({
 .oven-player-wrapper {
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  max-height: 100%;
   background: #000;
   border-radius: 4px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .oven-player-container {
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  max-height: 100%;
 }
 </style>
