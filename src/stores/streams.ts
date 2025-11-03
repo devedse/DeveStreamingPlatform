@@ -72,7 +72,7 @@ export const useStreamStore = defineStore('streams', () => {
               stream.height = videoTrack.video.height
               stream.aspectRatio = videoTrack.video.width && videoTrack.video.height
                 ? videoTrack.video.width / videoTrack.video.height
-                : 16 / 9 // Default to 16:9 if not available
+                : DEFAULT_ASPECT_RATIO
             }
           }
           
@@ -124,6 +124,9 @@ export const useStreamStore = defineStore('streams', () => {
   function calculateViewerCount(stats: StreamStats): number {
     return Object.values(stats.connections).reduce((sum: number, count: unknown) => sum + (count as number), 0)
   }
+
+  // Default aspect ratio constant
+  const DEFAULT_ASPECT_RATIO = 16 / 9
 
   // Start polling for updates (optional, for real-time updates)
   let pollInterval: number | null = null

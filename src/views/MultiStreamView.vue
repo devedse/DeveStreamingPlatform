@@ -216,14 +216,10 @@ function applySelection() {
 
 // Calculate optimal style for each stream cell based on aspect ratio
 function getStreamCellStyle(stream: StreamInfo) {
-  // If we have aspect ratio info, use object-fit: contain to preserve it
-  // Otherwise, use object-fit: cover to fill the space
-  const aspectRatio = stream.aspectRatio || (stream.width && stream.height ? stream.width / stream.height : null)
-  
-  if (aspectRatio) {
+  // Use the aspectRatio from the stream info if available
+  if (stream.aspectRatio) {
     return {
-      // The player will maintain aspect ratio via object-fit
-      aspectRatio: aspectRatio.toString(),
+      aspectRatio: stream.aspectRatio.toString(),
     }
   }
   
