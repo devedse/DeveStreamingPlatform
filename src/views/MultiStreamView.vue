@@ -51,6 +51,8 @@
             </span>
           </div>
           <OvenPlayerComponent
+            :key="`player-${stream.name}`"
+            :stream-name="stream.name"
             :sources="generatePlaybackSources(stream.name)"
             :autoplay="false"
           />
@@ -216,7 +218,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
 import { generatePlaybackSources } from '@/services/api/endpoints'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
@@ -225,6 +227,7 @@ import type { StreamInfo } from '@/services/api/types'
 type SelectionMode = 'all' | 'all-except' | 'custom'
 
 const router = useRouter()
+const route = useRoute()
 const streamStore = useStreamStore()
 const showSelector = ref(false)
 const selectedStreams = ref<StreamInfo[]>([])
@@ -234,6 +237,7 @@ const tempSelectionMode = ref<SelectionMode>('all')
 const excludedStreamNames = ref<string[]>([])
 const showControls = ref(true)
 let hideControlsTimeout: number | null = null
+let isInitialized = ref(false)
 
 const availableStreams = computed(() => streamStore.liveStreams)
 
@@ -263,6 +267,48 @@ function goBack() {
   router.push('/')
 }
 
+// Update URL based on current selection state
+function updateUrl() {
+  const query: Record<string, string> = {}
+  
+  if (selectionMode.value === 'all-except' && excludedStreamNames.value.length > 0) {
+    query.mode = 'all-except'
+    query.exclude = excludedStreamNames.value.join(',')
+  } else if (selectionMode.value === 'custom' && selectedStreams.value.length > 0) {
+    query.mode = 'custom'
+    query.streams = selectedStreams.value.map(s => s.name).join(',')
+  }
+  // For 'all' mode, don't add any query params (default behavior)
+  
+  // Only update if the query has changed
+  const currentQuery = JSON.stringify(route.query)
+  const newQuery = JSON.stringify(query)
+  
+  if (currentQuery !== newQuery) {
+    router.replace({ query })
+  }
+}
+
+// Load state from URL on mount
+function loadStateFromUrl() {
+  const mode = route.query.mode as SelectionMode | undefined
+  
+  if (mode === 'all-except' && route.query.exclude) {
+    selectionMode.value = 'all-except'
+    excludedStreamNames.value = (route.query.exclude as string).split(',').filter(Boolean)
+  } else if (mode === 'custom' && route.query.streams) {
+    selectionMode.value = 'custom'
+    const customStreamNames = (route.query.streams as string).split(',').filter(Boolean)
+    // We'll apply these after streams are loaded
+    return customStreamNames
+  } else {
+    selectionMode.value = 'all'
+    excludedStreamNames.value = []
+  }
+  
+  return null
+}
+
 // Initialize temp selection when dialog opens
 watch(showSelector, (newValue) => {
   if (newValue) {
@@ -287,7 +333,24 @@ watch(tempSelectionMode, (newMode) => {
 })
 
 // Watch for changes in available streams and update selection based on mode
-watch(availableStreams, (newStreams) => {
+watch(availableStreams, (newStreams, oldStreams) => {
+  // Skip if not initialized yet (to avoid interfering with initial load from URL)
+  if (!isInitialized.value) return
+  
+  // Only update if stream names have actually changed (additions or removals)
+  const newStreamNames = new Set(newStreams.map(s => s.name))
+  const oldStreamNames = new Set(oldStreams?.map(s => s.name) || [])
+  
+  // Check if there are any additions or removals
+  const hasChanges = newStreamNames.size !== oldStreamNames.size ||
+    [...newStreamNames].some(name => !oldStreamNames.has(name)) ||
+    [...oldStreamNames].some(name => !newStreamNames.has(name))
+  
+  if (!hasChanges) {
+    // No actual stream additions/removals, just skip
+    return
+  }
+  
   if (selectionMode.value === 'all') {
     // Auto-add all new streams
     selectedStreams.value = [...newStreams]
@@ -296,9 +359,24 @@ watch(availableStreams, (newStreams) => {
     selectedStreams.value = newStreams.filter(
       stream => !excludedStreamNames.value.includes(stream.name)
     )
+    // Update excluded list - remove streams that no longer exist
+    excludedStreamNames.value = excludedStreamNames.value.filter(
+      name => newStreamNames.has(name)
+    )
+    // Update URL to reflect cleaned up exclusions
+    updateUrl()
+  } else if (selectionMode.value === 'custom') {
+    // In custom mode, remove streams that are no longer available
+    const prevSelectedCount = selectedStreams.value.length
+    selectedStreams.value = selectedStreams.value.filter(
+      stream => newStreamNames.has(stream.name)
+    )
+    // Update URL if streams were removed
+    if (prevSelectedCount !== selectedStreams.value.length) {
+      updateUrl()
+    }
   }
-  // For 'custom' mode, don't auto-update
-}, { deep: true })
+})
 
 // Calculate optimal grid class based on number of streams
 const gridClass = computed(() => {
@@ -345,6 +423,9 @@ function applySelection() {
     excludedStreamNames.value = []
   }
   
+  // Update URL to reflect new selection
+  updateUrl()
+  
   showSelector.value = false
 }
 
@@ -361,17 +442,33 @@ function getStreamCellStyle(stream: StreamInfo) {
 }
 
 onMounted(async () => {
+  // Load state from URL first
+  const customStreamNames = loadStateFromUrl()
+  
   // Fetch streams and start polling
   await streamStore.fetchStreams()
   streamStore.startPolling(5000)
   
-  // Auto-select all streams on first load with 'all' mode
-  if (availableStreams.value.length > 0) {
+  // Apply initial selection based on mode
+  if (selectionMode.value === 'all') {
+    // Auto-select all streams with 'all' mode
     selectedStreams.value = [...availableStreams.value]
     tempSelectedStreams.value = [...availableStreams.value]
-    selectionMode.value = 'all'
-    excludedStreamNames.value = []
+  } else if (selectionMode.value === 'all-except') {
+    // Apply exclusions from URL
+    selectedStreams.value = availableStreams.value.filter(
+      stream => !excludedStreamNames.value.includes(stream.name)
+    )
+    tempSelectedStreams.value = [...selectedStreams.value]
+  } else if (selectionMode.value === 'custom' && customStreamNames) {
+    // Apply custom selection from URL
+    selectedStreams.value = availableStreams.value.filter(
+      stream => customStreamNames.includes(stream.name)
+    )
+    tempSelectedStreams.value = [...selectedStreams.value]
   }
+  
+  isInitialized.value = true
 })
 
 onBeforeUnmount(() => {

@@ -1,11 +1,11 @@
 <template>
   <div class="oven-player-wrapper">
-    <div id="ovenplayer" class="oven-player-container"></div>
+    <div :id="playerId" class="oven-player-container"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch } from 'vue'
+import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
 import OvenPlayer from 'ovenplayer'
 
 interface Source {
@@ -16,6 +16,7 @@ interface Source {
 
 interface Props {
   sources: Source[]
+  streamName: string
   autoplay?: boolean
 }
 
@@ -23,6 +24,8 @@ const props = withDefaults(defineProps<Props>(), {
   autoplay: true,
 })
 
+// Generate a unique ID for this player instance using stream name
+const playerId = ref(`ovenplayer-${props.streamName}`)
 let player: any = null
 
 onMounted(() => {
@@ -42,7 +45,7 @@ watch(() => props.sources, () => {
 
 function initPlayer() {
   try {
-    player = OvenPlayer.create('ovenplayer', {
+    player = OvenPlayer.create(playerId.value, {
       sources: props.sources,
       autoStart: props.autoplay,
       controls: true,
