@@ -86,63 +86,82 @@
         <v-divider></v-divider>
 
         <v-card-text class="pa-4">
-          <!-- Current selection mode indicator -->
-          <v-alert
-            v-if="selectionMode === 'all'"
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-          >
-            <strong>Auto-update enabled:</strong> New streams will be added automatically
-          </v-alert>
-          <v-alert
-            v-else-if="selectionMode === 'all-except'"
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mb-4"
-          >
-            <strong>Auto-update enabled:</strong> New streams will be added, except excluded ones
-          </v-alert>
-          
-          <!-- Quick selection options -->
+          <!-- Selection mode buttons -->
           <div class="mb-4">
-            <h3 class="text-subtitle-1 mb-2">Quick Select</h3>
-            <div class="d-flex gap-2 flex-wrap">
-              <v-btn
-                variant="tonal"
-                color="primary"
-                @click="selectAll"
-                prepend-icon="mdi-select-all"
-              >
+            <h3 class="text-subtitle-1 mb-2">Selection Mode</h3>
+            <v-btn-toggle
+              v-model="tempSelectionMode"
+              color="primary"
+              mandatory
+              density="compact"
+              class="mb-3"
+            >
+              <v-btn value="all">
+                <v-icon icon="mdi-select-all" start></v-icon>
                 All Streams
               </v-btn>
-              <v-btn
-                variant="tonal"
-                @click="clearSelection"
-                prepend-icon="mdi-close"
-              >
-                Clear All
+              <v-btn value="all-except">
+                <v-icon icon="mdi-minus-circle" start></v-icon>
+                All Except
               </v-btn>
-            </div>
+              <v-btn value="custom">
+                <v-icon icon="mdi-hand-pointing-up" start></v-icon>
+                Custom
+              </v-btn>
+            </v-btn-toggle>
+            
+            <!-- Mode descriptions -->
+            <v-alert
+              v-if="tempSelectionMode === 'all'"
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mt-2"
+            >
+              All streams will be shown. New streams auto-added.
+            </v-alert>
+            <v-alert
+              v-else-if="tempSelectionMode === 'all-except'"
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mt-2"
+            >
+              All streams shown except unchecked. New streams auto-added.
+            </v-alert>
+            <v-alert
+              v-else
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mt-2"
+            >
+              Only checked streams shown. New streams NOT auto-added.
+            </v-alert>
           </div>
 
           <v-divider class="my-4"></v-divider>
 
           <!-- Stream list with checkboxes -->
           <div v-if="availableStreams.length > 0">
-            <h3 class="text-subtitle-1 mb-2">Available Streams ({{ availableStreams.length }})</h3>
+            <h3 class="text-subtitle-1 mb-2">
+              Available Streams ({{ availableStreams.length }})
+              <span v-if="tempSelectionMode === 'all-except'" class="text-caption text-grey ml-2">
+                (Uncheck to exclude)
+              </span>
+            </h3>
             <v-list>
               <v-list-item
                 v-for="stream in availableStreams"
                 :key="stream.name"
-                @click="toggleStream(stream)"
+                @click="tempSelectionMode !== 'all' && toggleStream(stream)"
+                :disabled="tempSelectionMode === 'all'"
               >
                 <template v-slot:prepend>
                   <v-checkbox
                     :model-value="isSelected(stream)"
-                    @click.stop="toggleStream(stream)"
+                    @click.stop="tempSelectionMode !== 'all' && toggleStream(stream)"
+                    :disabled="tempSelectionMode === 'all'"
                     color="primary"
                     hide-details
                   ></v-checkbox>
@@ -211,6 +230,7 @@ const showSelector = ref(false)
 const selectedStreams = ref<StreamInfo[]>([])
 const tempSelectedStreams = ref<StreamInfo[]>([])
 const selectionMode = ref<SelectionMode>('all')
+const tempSelectionMode = ref<SelectionMode>('all')
 const excludedStreamNames = ref<string[]>([])
 const showControls = ref(true)
 let hideControlsTimeout: number | null = null
@@ -247,7 +267,23 @@ function goBack() {
 watch(showSelector, (newValue) => {
   if (newValue) {
     tempSelectedStreams.value = [...selectedStreams.value]
+    tempSelectionMode.value = selectionMode.value
   }
+})
+
+// Update temp selection when mode changes
+watch(tempSelectionMode, (newMode) => {
+  if (newMode === 'all') {
+    // In 'all' mode, select all streams
+    tempSelectedStreams.value = [...availableStreams.value]
+  } else if (newMode === 'all-except') {
+    // In 'all-except' mode, keep current selection (user will uncheck what to exclude)
+    // If switching from another mode, start with all selected
+    if (tempSelectedStreams.value.length === 0) {
+      tempSelectedStreams.value = [...availableStreams.value]
+    }
+  }
+  // In 'custom' mode, keep current selection as-is
 })
 
 // Watch for changes in available streams and update selection based on mode
@@ -289,35 +325,23 @@ function isSelected(stream: StreamInfo) {
   return tempSelectedStreams.value.some(s => s.name === stream.name)
 }
 
-function selectAll() {
-  tempSelectedStreams.value = [...availableStreams.value]
-}
-
-function clearSelection() {
-  tempSelectedStreams.value = []
-}
-
 function applySelection() {
-  selectedStreams.value = [...tempSelectedStreams.value]
+  // Apply the selected mode
+  selectionMode.value = tempSelectionMode.value
   
-  // Determine selection mode based on what was selected
-  if (tempSelectedStreams.value.length === availableStreams.value.length) {
-    // All streams selected - use 'all' mode
-    selectionMode.value = 'all'
+  if (tempSelectionMode.value === 'all') {
+    // In 'all' mode, show all streams and clear exclusions
+    selectedStreams.value = [...availableStreams.value]
     excludedStreamNames.value = []
-  } else if (tempSelectedStreams.value.length === 0) {
-    // No streams selected - use 'custom' mode
-    selectionMode.value = 'custom'
-    excludedStreamNames.value = []
-  } else if (tempSelectedStreams.value.length > availableStreams.value.length / 2) {
-    // More than half selected - use 'all-except' mode
-    selectionMode.value = 'all-except'
+  } else if (tempSelectionMode.value === 'all-except') {
+    // In 'all-except' mode, calculate excluded streams
+    selectedStreams.value = [...tempSelectedStreams.value]
     excludedStreamNames.value = availableStreams.value
       .filter(stream => !tempSelectedStreams.value.some(s => s.name === stream.name))
       .map(stream => stream.name)
   } else {
-    // Less than half selected - use 'custom' mode
-    selectionMode.value = 'custom'
+    // In 'custom' mode, use selected streams and clear exclusions
+    selectedStreams.value = [...tempSelectedStreams.value]
     excludedStreamNames.value = []
   }
   
