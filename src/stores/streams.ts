@@ -60,6 +60,22 @@ export const useStreamStore = defineStore('streams', () => {
             stream.viewerCount = calculateViewerCount(statsResponse.response)
           }
           
+          // Fetch stream details to get resolution
+          const detailsResponse = await omeApi.getStreamDetails(stream.name)
+          if (detailsResponse?.response) {
+            // Find the first video track to get resolution
+            const videoTrack = detailsResponse.response.input.tracks.find(
+              track => track.type === 'Video' && track.video
+            )
+            if (videoTrack?.video) {
+              stream.width = videoTrack.video.width
+              stream.height = videoTrack.video.height
+              stream.aspectRatio = videoTrack.video.width && videoTrack.video.height
+                ? videoTrack.video.width / videoTrack.video.height
+                : 16 / 9 // Default to 16:9 if not available
+            }
+          }
+          
           // Check if this stream is being recorded
           const activeRecording = recordings.find(r => 
             r.stream.name === stream.name && 

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import StreamView from '@/views/StreamView.vue'
+import MultiStreamView from '@/views/MultiStreamView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -19,6 +20,14 @@ const router = createRouter({
       component: StreamView,
       meta: {
         title: 'Watch Stream',
+      },
+    },
+    {
+      path: '/streams/multi',
+      name: 'multi-stream',
+      component: MultiStreamView,
+      meta: {
+        title: 'Multi-Stream View',
       },
     },
   ],

@@ -37,6 +37,13 @@
       {{ totalViewers }} {{ totalViewers === 1 ? 'viewer' : 'viewers' }}
     </v-chip>
 
+    <!-- Multi-stream view button -->
+    <v-btn
+      icon="mdi-view-grid"
+      @click="navigateToMultiStream"
+      :color="isMultiStreamView ? 'primary' : undefined"
+    ></v-btn>
+
     <!-- Theme toggle button -->
     <v-btn
       :icon="theme.global.current.value.dark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
@@ -48,17 +55,25 @@
 <script setup lang="ts">
 import { useTheme } from 'vuetify'
 import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
 import { APP_VERSION } from '@/version'
 
 const theme = useTheme()
+const router = useRouter()
+const route = useRoute()
 const streamStore = useStreamStore()
 
 const totalViewers = computed(() => streamStore.totalViewers)
 const appVersion = APP_VERSION
+const isMultiStreamView = computed(() => route.name === 'multi-stream')
 
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
+}
+
+function navigateToMultiStream() {
+  router.push('/streams/multi')
 }
 </script>
 
