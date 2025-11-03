@@ -67,6 +67,26 @@ export const generatePlaybackSources = (streamName: string) => {
   console.log('WebRTC URL:', webrtcUrl);
   console.log('LLHLS URL:', llhlsUrl);
   
+  // Check if running locally (localhost or 127.0.0.1)
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  
+  // For local development, prefer LLHLS first (better for debugging multiple streams)
+  // For production, prefer WebRTC first (lower latency)
+  if (isLocal) {
+    return [
+      {
+        type: 'llhls' as const,
+        file: llhlsUrl,
+        label: 'LLHLS'
+      },
+      {
+        type: 'webrtc' as const,
+        file: webrtcUrl,
+        label: 'WebRTC'
+      }
+    ]
+  }
+  
   return [
     {
       type: 'webrtc' as const,

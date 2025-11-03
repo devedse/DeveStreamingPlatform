@@ -52,6 +52,9 @@ export interface StreamInfo {
   viewerCount: number
   stats?: StreamStats
   isRecording?: boolean
+  width?: number
+  height?: number
+  aspectRatio?: number
 }
 
 // Stream Details with variants

@@ -30,42 +30,53 @@ export const useStreamStore = defineStore('streams', () => {
     error.value = null
     try {
       const streamNames = await omeApi.getStreams()
-      
-      // Create a map of existing streams to preserve current viewer counts
-      const existingStreamsMap = new Map(
-        streams.value.map((s: StreamInfo) => [s.name, s])
-      )
-      
-      // Create StreamInfo objects for each stream, preserving existing data
-      streams.value = streamNames.map((name: string) => {
-        const existingStream = existingStreamsMap.get(name)
+      const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
+
+      const nextStreams: StreamInfo[] = streamNames.map((name) => {
+        const existing = existingMap.get(name)
         return {
           name,
-          isLive: true, // If it's in the list, it's live
-          viewerCount: existingStream?.viewerCount ?? 0, // Preserve existing viewer count
-          isRecording: existingStream?.isRecording ?? false, // Preserve existing recording state
-          stats: existingStream?.stats, // Preserve existing stats
+          isLive: true,
+          viewerCount: existing?.viewerCount ?? 0,
+          isRecording: existing?.isRecording ?? false,
+          stats: existing?.stats,
+          width: existing?.width,
+          height: existing?.height,
+          aspectRatio: existing?.aspectRatio,
         }
       })
 
-      // Fetch recording states
+      streams.value = nextStreams
+
       const recordings = await omeApi.getRecordingState()
-      
-      // Fetch stats for each stream to get viewer counts
+
       await Promise.all(
-        streams.value.map(async (stream: StreamInfo) => {
-          const statsResponse = await omeApi.getStreamStats(stream.name)
+        streams.value.map(async (stream) => {
+          const [statsResponse, detailsResponse] = await Promise.all([
+            omeApi.getStreamStats(stream.name),
+            omeApi.getStreamDetails(stream.name),
+          ])
+
           if (statsResponse?.response) {
             stream.stats = statsResponse.response
             stream.viewerCount = calculateViewerCount(statsResponse.response)
           }
-          
-          // Check if this stream is being recorded
-          const activeRecording = recordings.find(r => 
-            r.stream.name === stream.name && 
-            (r.state === 'recording' || r.state === 'ready' || r.state === 'stopping')
+
+          const videoTrack = detailsResponse?.response?.input.tracks.find(
+            (track) => track.type === 'Video' && track.video
           )
-          stream.isRecording = !!activeRecording
+
+          if (videoTrack?.video) {
+            const { width, height } = videoTrack.video
+            stream.width = width
+            stream.height = height
+            stream.aspectRatio = width && height ? width / height : DEFAULT_ASPECT_RATIO
+          }
+
+          stream.isRecording = recordings.some((recording) =>
+            recording.stream.name === stream.name &&
+            ['recording', 'ready', 'stopping'].includes(recording.state)
+          )
         })
       )
     } catch (err) {
@@ -108,6 +119,9 @@ export const useStreamStore = defineStore('streams', () => {
   function calculateViewerCount(stats: StreamStats): number {
     return Object.values(stats.connections).reduce((sum: number, count: unknown) => sum + (count as number), 0)
   }
+
+  // Default aspect ratio constant
+  const DEFAULT_ASPECT_RATIO = 16 / 9
 
   // Start polling for updates (optional, for real-time updates)
   let pollInterval: number | null = null

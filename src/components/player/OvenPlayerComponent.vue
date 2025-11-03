@@ -1,11 +1,11 @@
 <template>
   <div class="oven-player-wrapper">
-    <div id="ovenplayer" class="oven-player-container"></div>
+    <div :id="playerId" class="oven-player-container"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 import OvenPlayer from 'ovenplayer'
 
 interface Source {
@@ -16,13 +16,18 @@ interface Source {
 
 interface Props {
   sources: Source[]
+  streamName: string
   autoplay?: boolean
+  mute?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   autoplay: true,
+  mute: false,
 })
 
+// Generate a unique ID for this player instance using stream name
+const playerId = ref(`ovenplayer-${props.streamName}`)
 let player: any = null
 
 onMounted(() => {
@@ -33,21 +38,18 @@ onBeforeUnmount(() => {
   destroyPlayer()
 })
 
-watch(() => props.sources, () => {
-  if (player) {
-    destroyPlayer()
-    initPlayer()
-  }
-}, { deep: true })
+// Note: We don't watch sources changes because for a given stream,
+// the sources URLs don't change. The component will be recreated
+// (via key change) if we switch to a different stream.
 
 function initPlayer() {
   try {
-    player = OvenPlayer.create('ovenplayer', {
+    player = OvenPlayer.create(playerId.value, {
       sources: props.sources,
       autoStart: props.autoplay,
       controls: true,
-      mute: false,
-      //volume: 50,
+      mute: props.mute,
+      volume: 0,
       showBigPlayButton: true,
       aspectRatio: 'auto',
       autoFallback: false,
@@ -93,20 +95,13 @@ defineExpose({
 .oven-player-wrapper {
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  max-height: 100%;
   background: #000;
   border-radius: 4px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .oven-player-container {
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  max-height: 100%;
 }
 </style>
