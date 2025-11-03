@@ -257,35 +257,24 @@ function evaluateGridConfig(
   const widthLeftover = availableWidth - scaledTotalWidth
   const heightLeftover = availableHeight - scaledTotalHeight
   
-  // Debug logging
-  console.log('Scaled row heights BEFORE redistribution:', scaledRowHeights)
-  console.log('Width leftover:', widthLeftover, 'Height leftover:', heightLeftover)
-  
-  // Simpler redistribution: if height-constrained, calculate exact widths and redistribute
+  // Redistribute leftover space intelligently
   if (Math.abs(heightLeftover) < 1 && widthLeftover > 1) {
-    // Height is already at maximum, so row heights don't change
-    // Calculate what each stream's width SHOULD be at current row height
+    // Height-constrained: calculate exact widths needed at current row height
     const rowHeight = scaledRowHeights[0] ?? 0
-    console.log('Using row height:', rowHeight)
     const exactStreamWidths: number[] = []
     let totalExactWidth = 0
     
     for (let i = 0; i < streamCount; i++) {
       const aspectRatio = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
       const exactWidth = rowHeight * aspectRatio
-      console.log(`Stream ${i}: AR=${aspectRatio}, exactWidth=${exactWidth}`)
       exactStreamWidths.push(exactWidth)
       totalExactWidth += exactWidth
     }
     
-    console.log('Total exact width:', totalExactWidth, 'Available width:', availableWidth)
-    // Remaining width = available - what streams need
     const unused = availableWidth - totalExactWidth
-    console.log('Unused width:', unused)
     
-    // Redistribute intelligently
     if (unused >= 0) {
-      // Unused space: give it to widest stream
+      // Give unused width to the widest stream
       if (unused > 0) {
         let widestIdx = 0
         let maxAR = aspectRatios[0] ?? DEFAULT_ASPECT_RATIO
@@ -296,23 +285,18 @@ function evaluateGridConfig(
             widestIdx = i
           }
         }
-        console.log('Giving unused to stream', widestIdx, 'with AR', maxAR)
         exactStreamWidths[widestIdx] = exactStreamWidths[widestIdx]! + unused
       }
       
-      console.log('Final exact stream widths:', exactStreamWidths)
-      // Set column widths
       for (let col = 0; col < cols; col++) {
         scaledColWidths[col] = exactStreamWidths[col] ?? 0
       }
     } else {
-      // Streams are too big: need to shrink row height
-      console.log('Streams too big, shrinking row height')
+      // Streams are too wide: shrink row height to fit
       const neededRowHeight = availableWidth / exactStreamWidths.reduce((sum, _w, i) => {
         const ar = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
         return sum + ar
       }, 0)
-      console.log('New row height:', neededRowHeight)
       scaledRowHeights = scaledRowHeights.map(() => neededRowHeight)
       
       // Recalculate stream widths at new row height
@@ -339,7 +323,6 @@ function evaluateGridConfig(
         exactStreamWidths[widestIdx] = exactStreamWidths[widestIdx]! + finalUnused
       }
       
-      console.log('Final stream widths after shrink:', exactStreamWidths)
       for (let col = 0; col < cols; col++) {
         scaledColWidths[col] = exactStreamWidths[col] ?? 0
       }
