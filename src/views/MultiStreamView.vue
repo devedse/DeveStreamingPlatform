@@ -1,15 +1,35 @@
 <template>
-  <div class="multi-stream-container">
-    <!-- Floating stream selector button -->
-    <v-btn
-      icon
-      color="primary"
-      class="stream-selector-fab"
-      @click="showSelector = true"
-      elevation="4"
-    >
-      <v-icon>mdi-view-grid-plus</v-icon>
-    </v-btn>
+  <div 
+    class="multi-stream-container"
+    @mousemove="handleMouseMove"
+    @mouseleave="handleMouseLeave"
+  >
+    <!-- Auto-hiding overlay controls -->
+    <transition name="fade">
+      <div v-show="showControls" class="overlay-controls">
+        <!-- Back button -->
+        <v-btn
+          icon
+          color="primary"
+          class="back-btn"
+          @click="goBack"
+          elevation="4"
+        >
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
+        
+        <!-- Stream selector button -->
+        <v-btn
+          icon
+          color="primary"
+          class="stream-selector-btn"
+          @click="showSelector = true"
+          elevation="4"
+        >
+          <v-icon>mdi-view-grid-plus</v-icon>
+        </v-btn>
+      </div>
+    </transition>
 
     <!-- Stream grid - maximizes screen space -->
     <div 
@@ -66,6 +86,26 @@
         <v-divider></v-divider>
 
         <v-card-text class="pa-4">
+          <!-- Current selection mode indicator -->
+          <v-alert
+            v-if="selectionMode === 'all'"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-4"
+          >
+            <strong>Auto-update enabled:</strong> New streams will be added automatically
+          </v-alert>
+          <v-alert
+            v-else-if="selectionMode === 'all-except'"
+            type="info"
+            variant="tonal"
+            density="compact"
+            class="mb-4"
+          >
+            <strong>Auto-update enabled:</strong> New streams will be added, except excluded ones
+          </v-alert>
+          
           <!-- Quick selection options -->
           <div class="mb-4">
             <h3 class="text-subtitle-1 mb-2">Quick Select</h3>
@@ -157,17 +197,51 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
 import { generatePlaybackSources } from '@/services/api/endpoints'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
 import type { StreamInfo } from '@/services/api/types'
 
+type SelectionMode = 'all' | 'all-except' | 'custom'
+
+const router = useRouter()
 const streamStore = useStreamStore()
 const showSelector = ref(false)
 const selectedStreams = ref<StreamInfo[]>([])
 const tempSelectedStreams = ref<StreamInfo[]>([])
+const selectionMode = ref<SelectionMode>('all')
+const excludedStreamNames = ref<string[]>([])
+const showControls = ref(true)
+let hideControlsTimeout: number | null = null
 
 const availableStreams = computed(() => streamStore.liveStreams)
+
+// Auto-hide controls after 3 seconds of mouse inactivity
+function handleMouseMove() {
+  showControls.value = true
+  
+  if (hideControlsTimeout) {
+    clearTimeout(hideControlsTimeout)
+  }
+  
+  hideControlsTimeout = window.setTimeout(() => {
+    showControls.value = false
+  }, 3000)
+}
+
+function handleMouseLeave() {
+  // Immediately hide when mouse leaves the container
+  showControls.value = false
+  if (hideControlsTimeout) {
+    clearTimeout(hideControlsTimeout)
+    hideControlsTimeout = null
+  }
+}
+
+function goBack() {
+  router.push('/')
+}
 
 // Initialize temp selection when dialog opens
 watch(showSelector, (newValue) => {
@@ -175,6 +249,20 @@ watch(showSelector, (newValue) => {
     tempSelectedStreams.value = [...selectedStreams.value]
   }
 })
+
+// Watch for changes in available streams and update selection based on mode
+watch(availableStreams, (newStreams) => {
+  if (selectionMode.value === 'all') {
+    // Auto-add all new streams
+    selectedStreams.value = [...newStreams]
+  } else if (selectionMode.value === 'all-except') {
+    // Add all streams except excluded ones
+    selectedStreams.value = newStreams.filter(
+      stream => !excludedStreamNames.value.includes(stream.name)
+    )
+  }
+  // For 'custom' mode, don't auto-update
+}, { deep: true })
 
 // Calculate optimal grid class based on number of streams
 const gridClass = computed(() => {
@@ -211,6 +299,28 @@ function clearSelection() {
 
 function applySelection() {
   selectedStreams.value = [...tempSelectedStreams.value]
+  
+  // Determine selection mode based on what was selected
+  if (tempSelectedStreams.value.length === availableStreams.value.length) {
+    // All streams selected - use 'all' mode
+    selectionMode.value = 'all'
+    excludedStreamNames.value = []
+  } else if (tempSelectedStreams.value.length === 0) {
+    // No streams selected - use 'custom' mode
+    selectionMode.value = 'custom'
+    excludedStreamNames.value = []
+  } else if (tempSelectedStreams.value.length > availableStreams.value.length / 2) {
+    // More than half selected - use 'all-except' mode
+    selectionMode.value = 'all-except'
+    excludedStreamNames.value = availableStreams.value
+      .filter(stream => !tempSelectedStreams.value.some(s => s.name === stream.name))
+      .map(stream => stream.name)
+  } else {
+    // Less than half selected - use 'custom' mode
+    selectionMode.value = 'custom'
+    excludedStreamNames.value = []
+  }
+  
   showSelector.value = false
 }
 
@@ -231,15 +341,20 @@ onMounted(async () => {
   await streamStore.fetchStreams()
   streamStore.startPolling(5000)
   
-  // Auto-select all streams on first load
+  // Auto-select all streams on first load with 'all' mode
   if (availableStreams.value.length > 0) {
     selectedStreams.value = [...availableStreams.value]
     tempSelectedStreams.value = [...availableStreams.value]
+    selectionMode.value = 'all'
+    excludedStreamNames.value = []
   }
 })
 
 onBeforeUnmount(() => {
   streamStore.stopPolling()
+  if (hideControlsTimeout) {
+    clearTimeout(hideControlsTimeout)
+  }
 })
 </script>
 
@@ -247,17 +362,38 @@ onBeforeUnmount(() => {
 .multi-stream-container {
   position: relative;
   width: 100vw;
-  height: calc(100vh - 64px); /* Full viewport minus AppHeader */
+  height: 100vh; /* Full viewport - no header */
   overflow: hidden;
   background: #000;
 }
 
-/* Floating action button for stream selection */
-.stream-selector-fab {
+/* Auto-hiding overlay controls */
+.overlay-controls {
   position: fixed;
-  top: 80px;
-  right: 16px;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
   z-index: 1000;
+  pointer-events: none;
+}
+
+.overlay-controls .back-btn,
+.overlay-controls .stream-selector-btn {
+  pointer-events: auto;
+}
+
+/* Fade transition for overlay controls */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 /* Empty state */
