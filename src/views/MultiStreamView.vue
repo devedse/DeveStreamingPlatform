@@ -35,13 +35,11 @@
     <div 
       v-if="selectedStreams.length > 0"
       class="streams-grid"
-      :class="gridClass"
     >
       <div
         v-for="stream in selectedStreams"
         :key="stream.name"
         class="stream-cell"
-        :style="getStreamCellStyle(stream)"
       >
         <div class="stream-cell-inner">
           <div class="stream-label">
@@ -401,18 +399,6 @@ watch(availableStreams, (newStreams, oldStreams) => {
   }
 })
 
-// Calculate optimal grid class based on number of streams
-const gridClass = computed(() => {
-  const count = selectedStreams.value.length
-  if (count === 1) return 'grid-1'
-  if (count === 2) return 'grid-2'
-  if (count <= 4) return 'grid-4'
-  if (count <= 6) return 'grid-6'
-  if (count <= 9) return 'grid-9'
-  if (count <= 12) return 'grid-12'
-  return 'grid-16'
-})
-
 function toggleStream(stream: StreamInfo) {
   const index = tempSelectedStreams.value.findIndex(s => s.name === stream.name)
   if (index >= 0) {
@@ -450,18 +436,6 @@ function applySelection() {
   updateUrl()
   
   showSelector.value = false
-}
-
-// Calculate optimal style for each stream cell based on aspect ratio
-function getStreamCellStyle(stream: StreamInfo) {
-  // Use the aspectRatio from the stream info if available
-  if (stream.aspectRatio) {
-    return {
-      aspectRatio: stream.aspectRatio.toString(),
-    }
-  }
-  
-  return {}
 }
 
 onMounted(async () => {
@@ -550,66 +524,39 @@ onBeforeUnmount(() => {
   color: #fff;
 }
 
-/* Grid layouts - no gaps, maximum screen usage */
+/* Grid layouts - responsive auto-fit grid */
 .streams-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 2px;
   width: 100%;
   height: 100%;
-  gap: 0;
   padding: 0;
   margin: 0;
+  overflow: hidden;
 }
 
-/* 1 stream - full screen */
-.grid-1 {
+/* Single stream - full screen */
+.streams-grid:has(.stream-cell:only-child) {
   grid-template-columns: 1fr;
   grid-template-rows: 1fr;
 }
 
-/* 2 streams - side by side */
-.grid-2 {
-  grid-template-columns: 1fr 1fr;
+/* Two streams - responsive split */
+.streams-grid:has(.stream-cell:nth-child(2):last-child) {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   grid-template-rows: 1fr;
 }
 
-/* 3-4 streams - 2x2 grid */
-.grid-4 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-}
-
-/* 5-6 streams - 2x3 grid */
-.grid-6 {
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-}
-
-/* 7-9 streams - 3x3 grid */
-.grid-9 {
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
-}
-
-/* 10-12 streams - 3x4 grid */
-.grid-12 {
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr;
-}
-
-/* 13-16 streams - 4x4 grid */
-.grid-16 {
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr 1fr 1fr;
-}
-
-/* Stream cell - no padding/margin */
+/* Stream cell */
 .stream-cell {
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: #000;
-  border: 1px solid #222; /* Minimal border for visibility */
+  border: 1px solid #222;
   display: flex;
   align-items: center;
   justify-content: center;
