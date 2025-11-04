@@ -38,10 +38,38 @@
           </template>
         </v-text-field>
 
+        <div class="mt-6">
+          <div class="d-flex align-center gap-2 mb-2">
+            <v-icon icon="mdi-monitor-share" color="primary"></v-icon>
+            <span class="text-subtitle-1 font-weight-medium">Configuring OBS</span>
+          </div>
+          <div class="text-body-2 text-grey mb-3">
+            Choose the encoder you use below to view the recommended OBS configuration screenshot.
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <v-btn
+              variant="tonal"
+              color="primary"
+              size="small"
+              @click="openPreview('nvenc')"
+            >
+              NVENC (NVIDIA)
+            </v-btn>
+            <v-btn
+              variant="tonal"
+              color="secondary"
+              size="small"
+              @click="openPreview('h264')"
+            >
+              x264 (CPU)
+            </v-btn>
+          </div>
+        </div>
+
         <!-- Show URLs after stream name is entered -->
         <div v-if="showUrls && streamName.trim()" class="mt-4">
           <v-divider class="mb-4"></v-divider>
-          
+
           <h3 class="text-subtitle-1 mb-3 font-weight-bold">
             <v-icon icon="mdi-broadcast" class="mr-2" color="primary"></v-icon>
             Your Streaming URLs:
@@ -206,18 +234,86 @@
     >
       {{ snackbarText }}
     </v-snackbar>
+
+    <v-dialog v-model="previewDialog" max-width="960">
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <div>
+            <div class="text-subtitle-1 font-weight-bold">{{ previewGuide?.label }}</div>
+            <div class="text-caption text-grey">{{ previewGuide?.description }}</div>
+          </div>
+          <v-btn icon="mdi-close" variant="text" @click="closePreview"></v-btn>
+        </v-card-title>
+        <v-divider></v-divider>
+        <v-card-text class="pa-0">
+          <v-img
+            v-if="previewGuide"
+            :src="previewGuide.image"
+            :alt="previewGuide.imageAlt"
+            max-height="80vh"
+            contain
+            class="preview-image"
+            @click="closePreview"
+          ></v-img>
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn
+            v-if="previewGuide"
+            variant="text"
+            :href="previewGuide.image"
+            download
+          >
+            <v-icon icon="mdi-download" start></v-icon>
+            Download PNG
+          </v-btn>
+          <v-btn variant="flat" color="primary" @click="closePreview">Close</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { generateStreamUrls } from '@/services/api/endpoints'
+import nvencImage from '@/assets/images/nvenc_settings.png'
+import h264Image from '@/assets/images/x264_settings.png'
 
 const dialog = ref(false)
 const streamName = ref('')
 const showUrls = ref(false)
 const snackbar = ref(false)
 const snackbarText = ref('')
+const previewDialog = ref(false)
+
+type EncoderId = 'nvenc' | 'h264'
+
+interface EncoderGuide {
+  id: EncoderId
+  label: string
+  description: string
+  image: string
+  imageAlt: string
+}
+
+const encoderGuides: Record<EncoderId, EncoderGuide> = {
+  nvenc: {
+    id: 'nvenc',
+    label: 'NVENC (NVIDIA)',
+    description: 'Use this if your GPU supports NVIDIA NVENC.',
+    image: nvencImage,
+    imageAlt: 'OBS configuration window showing NVENC encoder settings',
+  },
+  h264: {
+    id: 'h264',
+    label: 'x264 (CPU)',
+    description: 'Use this when encoding on the CPU (software).',
+    image: h264Image,
+    imageAlt: 'OBS configuration window showing x264 encoder settings',
+  },
+}
+
+const previewGuide = ref<EncoderGuide | null>(null)
 
 const urls = computed(() => generateStreamUrls(streamName.value.trim()))
 
@@ -240,7 +336,14 @@ function closeDialog() {
   setTimeout(() => {
     streamName.value = ''
     showUrls.value = false
+    previewGuide.value = null
+    previewDialog.value = false
   }, 300)
+}
+
+function closePreview() {
+  previewDialog.value = false
+  previewGuide.value = null
 }
 
 async function copyToClipboard(text: string, protocol: string) {
@@ -254,10 +357,19 @@ async function copyToClipboard(text: string, protocol: string) {
     snackbar.value = true
   }
 }
+
+function openPreview(encoder: EncoderId) {
+  previewGuide.value = encoderGuides[encoder]
+  previewDialog.value = true
+}
 </script>
 
 <style scoped>
 .url-section {
   padding: 8px 0;
+}
+
+.preview-image {
+  cursor: pointer;
 }
 </style>
