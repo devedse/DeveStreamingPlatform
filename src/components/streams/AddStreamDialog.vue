@@ -31,7 +31,6 @@
           variant="outlined"
           density="comfortable"
           :rules="[rules.required, rules.noSpaces]"
-          @keyup.enter="generateUrls"
         >
           <template #prepend-inner>
             <v-icon icon="mdi-tag"></v-icon>
@@ -67,156 +66,149 @@
         </div>
 
         <!-- Show URLs after stream name is entered -->
-        <div v-if="showUrls && streamName.trim()" class="mt-4">
-          <v-divider class="mb-4"></v-divider>
+        <v-expand-transition>
+          <div v-if="shouldShowUrls" class="mt-4">
+            <v-divider class="mb-4"></v-divider>
 
-          <h3 class="text-subtitle-1 mb-3 font-weight-bold">
-            <v-icon icon="mdi-broadcast" class="mr-2" color="primary"></v-icon>
-            Your Streaming URLs:
-          </h3>
+            <h3 class="text-subtitle-1 mb-3 font-weight-bold">
+              <v-icon icon="mdi-broadcast" class="mr-2" color="primary"></v-icon>
+              Your Streaming URLs:
+            </h3>
 
-          <!-- SRT URL -->
-          <div class="url-section mb-3">
-            <div class="d-flex align-center mb-2">
-              <v-chip size="small" color="primary" variant="flat" class="mr-2">SRT</v-chip>
-              <span class="text-caption text-grey">Recommended for best quality</span>
+            <!-- SRT URL -->
+            <div class="url-section mb-3">
+              <div class="d-flex align-center mb-2">
+                <v-chip size="small" color="primary" variant="flat" class="mr-2">SRT</v-chip>
+                <span class="text-caption text-grey">Recommended for best quality</span>
+              </div>
+              <v-text-field
+                :model-value="urls.srt"
+                readonly
+                density="compact"
+                variant="outlined"
+                hide-details
+              >
+                <template #append-inner>
+                  <v-btn
+                    icon="mdi-content-copy"
+                    size="small"
+                    variant="text"
+                    @click="copyToClipboard(urls.srt, 'SRT')"
+                  ></v-btn>
+                </template>
+              </v-text-field>
             </div>
-            <v-text-field
-              :model-value="urls.srt"
-              readonly
-              density="compact"
-              variant="outlined"
-              hide-details
-            >
-              <template #append-inner>
-                <v-btn
-                  icon="mdi-content-copy"
-                  size="small"
-                  variant="text"
-                  @click="copyToClipboard(urls.srt, 'SRT')"
-                ></v-btn>
-              </template>
-            </v-text-field>
-          </div>
 
-          <!-- RTMP URL -->
-          <div class="url-section mb-3">
-            <div class="d-flex align-center mb-2">
-              <v-chip size="small" color="secondary" variant="flat" class="mr-2">RTMP</v-chip>
-              <span class="text-caption text-grey">Standard streaming protocol</span>
+            <!-- RTMP URL -->
+            <div class="url-section mb-3">
+              <div class="d-flex align-center mb-2">
+                <v-chip size="small" color="secondary" variant="flat" class="mr-2">RTMP</v-chip>
+                <span class="text-caption text-grey">Standard streaming protocol</span>
+              </div>
+              <v-text-field
+                :model-value="urls.rtmp"
+                label="Server URL"
+                readonly
+                density="compact"
+                variant="outlined"
+                hide-details
+                class="mb-2"
+              >
+                <template #append-inner>
+                  <v-btn
+                    icon="mdi-content-copy"
+                    size="small"
+                    variant="text"
+                    @click="copyToClipboard(urls.rtmp, 'RTMP Server URL')"
+                  ></v-btn>
+                </template>
+              </v-text-field>
+              <v-text-field
+                :model-value="urls.rtmpStreamKey"
+                label="Stream Key"
+                readonly
+                density="compact"
+                variant="outlined"
+                hide-details
+              >
+                <template #append-inner>
+                  <v-btn
+                    icon="mdi-content-copy"
+                    size="small"
+                    variant="text"
+                    @click="copyToClipboard(urls.rtmpStreamKey, 'Stream Key')"
+                  ></v-btn>
+                </template>
+              </v-text-field>
             </div>
-            <v-text-field
-              :model-value="urls.rtmp"
-              label="Server URL"
-              readonly
-              density="compact"
-              variant="outlined"
-              hide-details
-              class="mb-2"
-            >
-              <template #append-inner>
-                <v-btn
-                  icon="mdi-content-copy"
-                  size="small"
-                  variant="text"
-                  @click="copyToClipboard(urls.rtmp, 'RTMP Server URL')"
-                ></v-btn>
-              </template>
-            </v-text-field>
-            <v-text-field
-              :model-value="urls.rtmpStreamKey"
-              label="Stream Key"
-              readonly
-              density="compact"
-              variant="outlined"
-              hide-details
-            >
-              <template #append-inner>
-                <v-btn
-                  icon="mdi-content-copy"
-                  size="small"
-                  variant="text"
-                  @click="copyToClipboard(urls.rtmpStreamKey, 'Stream Key')"
-                ></v-btn>
-              </template>
-            </v-text-field>
-          </div>
 
-          <!-- WebRTC URL (Ingest) -->
-          <div class="url-section mb-3">
-            <div class="d-flex align-center mb-2">
-              <v-chip size="small" color="info" variant="flat" class="mr-2">WebRTC Ingest</v-chip>
-              <span class="text-caption text-grey">Self-defined signaling protocol</span>
+            <!-- WebRTC URL (Ingest) -->
+            <div class="url-section mb-3">
+              <div class="d-flex align-center mb-2">
+                <v-chip size="small" color="info" variant="flat" class="mr-2">WebRTC Ingest</v-chip>
+                <span class="text-caption text-grey">Self-defined signaling protocol</span>
+              </div>
+              <v-text-field
+                :model-value="urls.webrtc"
+                readonly
+                density="compact"
+                variant="outlined"
+                hide-details
+              >
+                <template #append-inner>
+                  <v-btn
+                    icon="mdi-content-copy"
+                    size="small"
+                    variant="text"
+                    @click="copyToClipboard(urls.webrtc, 'WebRTC Ingest')"
+                  ></v-btn>
+                </template>
+              </v-text-field>
             </div>
-            <v-text-field
-              :model-value="urls.webrtc"
-              readonly
-              density="compact"
-              variant="outlined"
-              hide-details
-            >
-              <template #append-inner>
-                <v-btn
-                  icon="mdi-content-copy"
-                  size="small"
-                  variant="text"
-                  @click="copyToClipboard(urls.webrtc, 'WebRTC Ingest')"
-                ></v-btn>
-              </template>
-            </v-text-field>
-          </div>
 
-          <!-- WHIP URL -->
-          <div class="url-section mb-3">
-            <div class="d-flex align-center mb-2">
-              <v-chip size="small" color="success" variant="flat" class="mr-2">WHIP</v-chip>
-              <span class="text-caption text-grey">WebRTC HTTP Ingest Protocol</span>
+            <!-- WHIP URL -->
+            <div class="url-section mb-3">
+              <div class="d-flex align-center mb-2">
+                <v-chip size="small" color="success" variant="flat" class="mr-2">WHIP</v-chip>
+                <span class="text-caption text-grey">WebRTC HTTP Ingest Protocol</span>
+              </div>
+              <v-text-field
+                :model-value="urls.whip"
+                readonly
+                density="compact"
+                variant="outlined"
+                hide-details
+              >
+                <template #append-inner>
+                  <v-btn
+                    icon="mdi-content-copy"
+                    size="small"
+                    variant="text"
+                    @click="copyToClipboard(urls.whip, 'WHIP')"
+                  ></v-btn>
+                </template>
+              </v-text-field>
             </div>
-            <v-text-field
-              :model-value="urls.whip"
-              readonly
-              density="compact"
-              variant="outlined"
-              hide-details
-            >
-              <template #append-inner>
-                <v-btn
-                  icon="mdi-content-copy"
-                  size="small"
-                  variant="text"
-                  @click="copyToClipboard(urls.whip, 'WHIP')"
-                ></v-btn>
-              </template>
-            </v-text-field>
-          </div>
 
-          <v-alert
-            type="info"
-            variant="tonal"
-            density="compact"
-            class="mt-4"
-          >
-            <template #prepend>
-              <v-icon icon="mdi-information"></v-icon>
-            </template>
-            Start streaming with these URLs in OBS. Your stream will appear automatically on the home page!
-          </v-alert>
-        </div>
+            <v-alert
+              type="info"
+              variant="tonal"
+              density="compact"
+              class="mt-4"
+            >
+              <template #prepend>
+                <v-icon icon="mdi-information"></v-icon>
+              </template>
+              Start streaming with these URLs in OBS. Your stream will appear automatically on the home page!
+            </v-alert>
+          </div>
+        </v-expand-transition>
       </v-card-text>
 
       <v-divider></v-divider>
 
       <v-card-actions class="pa-4">
         <v-spacer></v-spacer>
-        <v-btn
-          v-if="!showUrls"
-          color="primary"
-          variant="flat"
-          :disabled="!streamName.trim() || hasSpaces"
-          @click="generateUrls"
-        >
-          Generate URLs
-        </v-btn>
         <v-btn
           variant="text"
           @click="closeDialog"
@@ -281,7 +273,6 @@ import h264Image from '@/assets/images/x264_settings.png'
 
 const dialog = ref(false)
 const streamName = ref('')
-const showUrls = ref(false)
 const snackbar = ref(false)
 const snackbarText = ref('')
 const previewDialog = ref(false)
@@ -319,15 +310,14 @@ const urls = computed(() => generateStreamUrls(streamName.value.trim()))
 
 const hasSpaces = computed(() => /\s/.test(streamName.value))
 
+const shouldShowUrls = computed(() => {
+  const name = streamName.value.trim()
+  return name.length > 0 && !hasSpaces.value
+})
+
 const rules = {
   required: (v: string) => !!v.trim() || 'Stream name is required',
   noSpaces: (v: string) => !/\s/.test(v) || 'Stream name cannot contain spaces',
-}
-
-function generateUrls() {
-  if (streamName.value.trim() && !hasSpaces.value) {
-    showUrls.value = true
-  }
 }
 
 function closeDialog() {
@@ -335,7 +325,6 @@ function closeDialog() {
   // Reset after dialog closes
   setTimeout(() => {
     streamName.value = ''
-    showUrls.value = false
     previewGuide.value = null
     previewDialog.value = false
   }, 300)
