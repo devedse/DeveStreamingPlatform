@@ -29,16 +29,6 @@ A modern web interface for managing and viewing live streams with OvenMediaEngin
 
 1. **Add a Stream**: Click the "+" button to generate streaming URLs
 2. **Start Streaming**: Use the generated URLs in OBS or other streaming software
-3. **View Stream**: Streams appear automatically on the home page
-4. **Monitor Stats**: Click any stream to view detailed statistics
-
-### Streaming URL Examples
-
-#### Ingestion (Provider) URLs
-- **RTMP**: `rtmp://server:1935/app/` + stream key
-- **SRT**: `srt://server:9999?streamid=app/app/streamname`
-- **WebRTC Ingest**: `ws://server:3333/app/streamname?direction=send`
-- **WHIP**: `http://server:3333/app/streamname?direction=whip`
 
 ## Docker Deployment
 
@@ -48,9 +38,63 @@ Create a `docker-compose.yml`:
 
 ```yaml
 services:
-  devestreaming:
+  ovenmediaengine:
+    image: airensoft/ovenmediaengine:latest
+    container_name: ovenmediaengine
+    restart: unless-stopped
+
+    # Environment variables - customize as needed
+    environment:
+      - OME_HOST_IP=*  # Change to your actual host IP if needed
+      - OME_ORIGIN_PORT=9000
+      - OME_RTMP_PROV_PORT=1935
+      - OME_SRT_PROV_PORT=9999
+      - OME_MPEGTS_PROV_PORT=4000
+      - OME_LLHLS_STREAM_PORT=3333
+      - OME_LLHLS_STREAM_TLS_PORT=3334
+      - OME_WEBRTC_SIGNALLING_PORT=3333
+      - OME_WEBRTC_SIGNALLING_TLS_PORT=3334
+      - OME_WEBRTC_TCP_RELAY_PORT=3478
+      - OME_WEBRTC_CANDIDATE_PORT=10000-10004
+    ports:
+      - "1935:1935"           # RTMP Provider
+      - "9999:9999/udp"       # SRT Provider
+      - "9000:9000"           # Origin Port
+      - "3333:3333"           # LLHLS Stream / WebRTC Signalling
+      - "3334:3334"           # LLHLS Stream TLS / WebRTC Signalling TLS
+      - "3478:3478"           # WebRTC TCP Relay
+      - "4000:4000/udp"       # MPEG-TS Provider
+      #- "8081:8081"           # API Server (Doesn't need to be exposed as this goes through the internal docker network)
+      #- "8082:8082"           # API Server TLS (Doesn't need to be exposed as this goes through the internal docker network)
+      #- "20080:20080"         # Thumbnail Port (Doesn't need to be exposed as this goes through the internal docker network)
+      #- "20081:20081"         # Thumbnail TLS Port (uncomment if using TLS)
+      - "10000-10009:10000-10009/udp"  # WebRTC Candidate Ports
+    volumes:
+      - ./origin_conf:/opt/ovenmediaengine/bin/origin_conf
+      - ./recordings:/recordings  # Change to your desired recording path
+      - ./logs:/var/log/ovenmediaengine
+      - ./letsencryptcerts:/etc/letsencrypt  # Optional: for TLS certificates
+    #devices:
+    #  - /dev/dri/renderD128:/dev/dri/renderD128  # Optional: for hardware acceleration
+
+  # Let's Encrypt certificate management (In my case using duckdns, but you should use your own here
+  # or just provie a certificate yourself)
+  letsencrypt:
+    image: maksimstojkovic/letsencrypt
+    container_name: letsencrypt
+    environment:
+      - DUCKDNS_TOKEN=your-duckdns-token-here
+      - DUCKDNS_DOMAIN=yourdomain.duckdns.org
+      - LETSENCRYPT_EMAIL=your-email@example.com
+      - UID=1000
+      - GID=1000
+    restart: unless-stopped
+    volumes:
+      - ./letsencryptcerts:/etc/letsencrypt
+
+  devestreamingplatform:
     image: devedse/devestreamingplatform:latest
-    container_name: devestreaming
+    container_name: devestreamingplatform
     restart: unless-stopped
     ports:
       - "8089:80"
@@ -58,19 +102,20 @@ services:
       # OvenMediaEngine Configuration (for nginx reverse proxy)
       - OME_API_URL=http://ovenmediaengine:8081
       - OME_API_TOKEN=ome-access-token
-      
+
+      # Thumbnail URL (for stream thumbnails)
+      - OME_THUMBNAIL_URL=http://ovenmediaengine:20080
+
       # Provider URLs (for stream ingestion/pushing - displayed to streamers)
-      - OME_PROVIDER_WEBRTC_URL=ws://10.88.28.213:3333
-      - OME_PROVIDER_RTMP_URL=rtmp://10.88.28.213:1935
-      - OME_PROVIDER_SRT_URL=srt://10.88.28.213:9999
+      # Use wss:// and https:// for TLS, ws:// and http:// for non-TLS
+      - OME_PROVIDER_WEBRTC_URL=wss://yourdomain.example.com:3334
+      - OME_PROVIDER_RTMP_URL=rtmp://yourdomain.example.com:1935
+      - OME_PROVIDER_SRT_URL=srt://yourdomain.example.com:9999
       
       # Publisher URLs (for stream playback - used by players)
-      - OME_PUBLISHER_WEBRTC_URL=ws://10.88.28.213:3333
-      - OME_PUBLISHER_LLHLS_URL=http://10.88.28.213:3333
-      
-      # Thumbnail URL (for stream thumbnails)
-      - OME_THUMBNAIL_URL=http://10.88.28.213:20080
-      
+      - OME_PUBLISHER_WEBRTC_URL=wss://yourdomain.example.com:3334
+      - OME_PUBLISHER_LLHLS_URL=https://yourdomain.example.com:3334
+
       # OME Server Configuration
       - OME_VHOST=default
       - OME_APP=app
@@ -78,12 +123,16 @@ services:
       # Basic Authentication (optional)
       - BASIC_AUTH_USERNAME=admin
       - BASIC_AUTH_PASSWORD=secure-password
+      
+      # Stream Security (optional)
+      - STREAM_AUTH_TOKEN=your-secure-token-here
 ```
 
-**Note:** If running on the same Docker network as OvenMediaEngine, you can use the container name:
-```yaml
-- OME_API_URL=http://ovenmediaengine:8081
-```
+**Complete Setup Notes:**
+- Replace `yourdomain.example.com` with your actual domain or IP address
+- The `letsencrypt` service is required to expose the WSS/HTTPS endpoints for the WebRTC/LLHLS streams
+- Configure OvenMediaEngine with AdmissionWebhooks (see Security section below)
+- Adjust volume paths according to your system setup
 
 Then run:
 
@@ -114,6 +163,7 @@ The application will be available at `http://localhost:8089`
 | **Authentication** | | |
 | `BASIC_AUTH_USERNAME` | HTTP basic auth username (optional) | - |
 | `BASIC_AUTH_PASSWORD` | HTTP basic auth password (optional) | - |
+| `STREAM_AUTH_TOKEN` | Shared secret token used with OvenMediaEngine AdmissionWebhooks to prevent unauthorized stream access. Token is exposed to authenticated users but validates all stream connections. | Optional - uses "noauth" if not set |
 
 ### Architecture
 
@@ -136,6 +186,39 @@ The application uses nginx as a reverse proxy with authentication:
 - All API requests from the browser go to `/omeapi` which nginx forwards to the actual OME server with authentication
 - All thumbnail requests go to `/thumbnails` which nginx forwards to the OME thumbnail server
 - The API token is injected by the proxy layer (nginx in production, Vite in development)
+
+### Stream Security (AdmissionWebhooks)
+
+The platform supports optional stream security using OvenMediaEngine's AdmissionWebhooks feature:
+
+#### Configuration
+
+1. **Set Environment Variable**: Add `STREAM_AUTH_TOKEN` to your docker-compose.yml
+2. **Configure OvenMediaEngine**: Add AdmissionWebhooks to your OME server configuration:
+
+```xml
+<AdmissionWebhooks>
+    <ControlServerUrl>http://nginx/webhook/admission</ControlServerUrl>
+    <SecretKey>admission_secret</SecretKey>
+    <Timeout>3000</Timeout>
+    <EnableSessionControl>true</EnableSessionControl>
+    <EnableSignedPolicy>false</EnableSignedPolicy>
+</AdmissionWebhooks>
+```
+
+#### How Security Works
+
+The platform implements a two-layer security model using Basic Authentication and stream tokens:
+
+**Layer 1: Basic Authentication (Web Interface Access)**
+- Users must authenticate with `BASIC_AUTH_USERNAME`/`BASIC_AUTH_PASSWORD` to access the web interface
+- Only authenticated users can view stream URLs and tokens
+
+**Layer 2: Stream Token Validation (Stream Access)**
+- **Without `STREAM_AUTH_TOKEN`**: Streams use "noauth" mode - all connections are allowed
+- **With `STREAM_AUTH_TOKEN`**: All stream URLs include the auth token (`?auth=your-token`)
+- **AdmissionWebhooks Integration**: OvenMediaEngine calls the nginx webhook endpoint before allowing any stream connection
+- **Token Verification**: The webhook validates that the auth token in the stream URL matches the configured `STREAM_AUTH_TOKEN`
 
 ## Local Development
 
@@ -173,6 +256,9 @@ VITE_PUBLISHER_LLHLS_URL=http://your-ome-server:3333
 # OME Configuration
 VITE_OME_VHOST=default
 VITE_OME_APP=app
+
+# Stream Security (optional)
+VITE_STREAM_AUTH_TOKEN=test123
 ```
 
 The dev server will proxy API calls from `/omeapi` to `VITE_API_BASE_URL` and inject the authentication token. Thumbnail requests to `/thumbnails` are proxied to `VITE_THUMBNAIL_URL`.

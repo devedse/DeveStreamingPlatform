@@ -61,11 +61,16 @@ export const generatePlaybackSources = (streamName: string) => {
   }
 
   // For WebRTC with transcodes, use the playlist name (multistream_webrtc) instead of just stream name
-  const webrtcUrl = `${config.ome.publishers.webrtcUrl}/${config.ome.app}/${streamName}/multistream_webrtc`
-  const llhlsUrl = `${config.ome.publishers.llhlsUrl}/${config.ome.app}/${streamName}/multistream_llhls.m3u8`
+  const webrtcBaseUrl = `${config.ome.publishers.webrtcUrl}/${config.ome.app}/${streamName}/multistream_webrtc`
+  const llhlsBaseUrl = `${config.ome.publishers.llhlsUrl}/${config.ome.app}/${streamName}/multistream_llhls.m3u8`
 
-  console.log('WebRTC URL:', webrtcUrl);
-  console.log('LLHLS URL:', llhlsUrl);
+  // Add auth token to URLs for admission webhook validation
+  const webrtcUrl = `${webrtcBaseUrl}?auth=${config.ome.authToken}`
+  const llhlsUrl = `${llhlsBaseUrl}?auth=${config.ome.authToken}`
+
+  console.log('Please do not share this auth secret');
+  console.log('WebRTC URL (with auth):', webrtcUrl);
+  console.log('LLHLS URL (with auth):', llhlsUrl);
   
   // Check if running locally (localhost or 127.0.0.1)
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'

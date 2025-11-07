@@ -40,7 +40,7 @@ echo "✓ OME Thumbnail proxy configured: ${OME_THUMBNAIL_URL}"
 
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
-envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
 mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 
 # Inject runtime environment variables into the built JavaScript
@@ -56,6 +56,7 @@ window.ENV_CONFIG = {
   OME_PROVIDER_SRT_URL: "${OME_PROVIDER_SRT_URL}",
   OME_PUBLISHER_WEBRTC_URL: "${OME_PUBLISHER_WEBRTC_URL}",
   OME_PUBLISHER_LLHLS_URL: "${OME_PUBLISHER_LLHLS_URL}",
+  STREAM_AUTH_TOKEN: "${STREAM_AUTH_TOKEN}",
 };
 EOF
 
@@ -68,6 +69,14 @@ fi
 if [ -z "$OME_PUBLISHER_WEBRTC_URL" ] || [ -z "$OME_PUBLISHER_LLHLS_URL" ]; then
     echo "❌ ERROR: OME_PUBLISHER_WEBRTC_URL and OME_PUBLISHER_LLHLS_URL are required!"
     exit 1
+fi
+
+# Configure stream auth token with default fallback
+if [ -z "$STREAM_AUTH_TOKEN" ]; then
+    export STREAM_AUTH_TOKEN="noauth"
+    echo "⚠ WARNING: STREAM_AUTH_TOKEN not set, using default 'noauth' (no security)"
+else
+    echo "✓ Stream authentication token configured"
 fi
 
 echo "✓ Configuration injected successfully"
