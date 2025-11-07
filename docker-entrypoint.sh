@@ -38,6 +38,14 @@ fi
 export OME_THUMBNAIL_PROXY_URL="${OME_THUMBNAIL_URL}"
 echo "✓ OME Thumbnail proxy configured: ${OME_THUMBNAIL_URL}"
 
+# Configure stream auth token with default fallback
+if [ -z "$STREAM_AUTH_TOKEN" ]; then
+    export STREAM_AUTH_TOKEN="noauth"
+    echo "⚠ WARNING: STREAM_AUTH_TOKEN not set, using default 'noauth' (no security)"
+else
+    echo "✓ Stream authentication token configured"
+fi
+
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
 envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
@@ -69,14 +77,6 @@ fi
 if [ -z "$OME_PUBLISHER_WEBRTC_URL" ] || [ -z "$OME_PUBLISHER_LLHLS_URL" ]; then
     echo "❌ ERROR: OME_PUBLISHER_WEBRTC_URL and OME_PUBLISHER_LLHLS_URL are required!"
     exit 1
-fi
-
-# Configure stream auth token with default fallback
-if [ -z "$STREAM_AUTH_TOKEN" ]; then
-    export STREAM_AUTH_TOKEN="noauth"
-    echo "⚠ WARNING: STREAM_AUTH_TOKEN not set, using default 'noauth' (no security)"
-else
-    echo "✓ Stream authentication token configured"
 fi
 
 echo "✓ Configuration injected successfully"
