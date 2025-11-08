@@ -163,7 +163,7 @@ The application will be available at `http://localhost:8089`
 | **Authentication** | | |
 | `BASIC_AUTH_USERNAME` | HTTP basic auth username (optional) | - |
 | `BASIC_AUTH_PASSWORD` | HTTP basic auth password (optional) | - |
-| `STREAM_AUTH_TOKEN` | Shared secret token used with OvenMediaEngine AdmissionWebhooks to prevent unauthorized stream access. Token is exposed to authenticated users but validates all stream connections. | Optional - uses "noauth" if not set |
+| `STREAM_AUTH_TOKEN` | Shared secret token used with OvenMediaEngine AdmissionWebhooks to prevent unauthorized stream access. Token is exposed to authenticated users but validates all stream connections. (See: "Stream Security") | Optional - uses "noauth" if not set |
 
 ### Architecture
 
@@ -198,11 +198,13 @@ The platform supports optional stream security using OvenMediaEngine's Admission
 
 ```xml
 <AdmissionWebhooks>
-    <ControlServerUrl>http://nginx/webhook/admission</ControlServerUrl>
-    <SecretKey>admission_secret</SecretKey>
+    <ControlServerUrl>http://devestreamingplatform/webhook/admission</ControlServerUrl>
+    <SecretKey>notused</SecretKey>
     <Timeout>3000</Timeout>
-    <EnableSessionControl>true</EnableSessionControl>
-    <EnableSignedPolicy>false</EnableSignedPolicy>
+    <Enables>
+        <!-- <Providers>rtmp,webrtc,srt</Providers> -->
+        <Publishers>webrtc,llhls,thumbnail,srt</Publishers>
+    </Enables>
 </AdmissionWebhooks>
 ```
 
