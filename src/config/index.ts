@@ -49,7 +49,7 @@ export const config = {
       webrtcUrl: getEnv('OME_PUBLISHER_WEBRTC_URL', 'VITE_PUBLISHER_WEBRTC_URL'),
       llhlsUrl: getEnv('OME_PUBLISHER_LLHLS_URL', 'VITE_PUBLISHER_LLHLS_URL'),
     },
-    // Stream authentication token
-    authToken: getEnv('STREAM_AUTH_TOKEN', 'VITE_STREAM_AUTH_TOKEN'),
+  // Stream authentication token
+  streamAuthToken: getEnv('STREAM_AUTH_TOKEN', 'VITE_STREAM_AUTH_TOKEN'),
   },
 }

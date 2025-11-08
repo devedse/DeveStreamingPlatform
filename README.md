@@ -220,7 +220,7 @@ The platform implements a two-layer security model using Basic Authentication an
 
 **Layer 2: Stream Token Validation (Stream Access)**
 - **Without `STREAM_AUTH_TOKEN`**: Streams use "noauth" mode - all connections are allowed
-- **With `STREAM_AUTH_TOKEN`**: All stream URLs include the auth token (`?auth=your-token`)
+- **With `STREAM_AUTH_TOKEN`**: All stream/thumbnail URLs include the auth token (`?auth=your-token`)
 - **AdmissionWebhooks Integration**: OvenMediaEngine calls the nginx webhook endpoint before allowing any stream connection
 - **Token Verification**: The webhook validates that the auth token in the stream URL matches the configured `STREAM_AUTH_TOKEN`
 

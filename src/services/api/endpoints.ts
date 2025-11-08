@@ -65,8 +65,8 @@ export const generatePlaybackSources = (streamName: string) => {
   const llhlsBaseUrl = `${config.ome.publishers.llhlsUrl}/${config.ome.app}/${streamName}/multistream_llhls.m3u8`
 
   // Add auth token to URLs for admission webhook validation
-  const webrtcUrl = `${webrtcBaseUrl}?auth=${config.ome.authToken}`
-  const llhlsUrl = `${llhlsBaseUrl}?auth=${config.ome.authToken}`
+  const webrtcUrl = `${webrtcBaseUrl}?auth=${config.ome.streamAuthToken}`
+  const llhlsUrl = `${llhlsBaseUrl}?auth=${config.ome.streamAuthToken}`
 
   console.log('Please do not share this auth secret');
   console.log('WebRTC URL (with auth):', webrtcUrl);
@@ -112,5 +112,11 @@ export const generatePlaybackSources = (streamName: string) => {
 export const generateThumbnailUrl = (streamName: string) => {
   // Add timestamp to prevent caching - thumbnails update frequently for live streams
   const timestamp = Date.now()
-  return `${config.api.thumbnailUrl}/${config.ome.app}/${streamName}/thumb.png?t=${timestamp}`
+  const base = `${config.api.thumbnailUrl}/${config.ome.app}/${streamName}/thumb.png`
+  const token = config.ome.streamAuthToken
+  // Only append auth when token is set and not the sentinel 'noauth'
+  if (token && token !== 'noauth') {
+    return `${base}?t=${timestamp}&auth=${encodeURIComponent(token)}`
+  }
+  return `${base}?t=${timestamp}`
 }
