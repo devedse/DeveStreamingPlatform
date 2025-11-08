@@ -193,6 +193,8 @@ The platform supports optional stream security using OvenMediaEngine's Admission
 
 #### Configuration
 
+Full reference OvenMediaEngine server configuration example used in this project can be found in `ovenmediaengine_example_Server.xml` (located at the repository root). You can open that file directly or copy it into your OME container's `origin_conf` directory as a starting point.
+
 1. **Set Environment Variable**: Add `STREAM_AUTH_TOKEN` to your docker-compose.yml
 2. **Configure OvenMediaEngine**: Add AdmissionWebhooks to your OME server configuration:
 
