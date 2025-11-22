@@ -2,7 +2,7 @@
 
 A modern web interface for managing and viewing live streams with OvenMediaEngine.
 
-![Deve Streaming Platform](image_stream.png)
+![Deve Streaming Platform](Screenshot1.png)
 
 ## Features
 
