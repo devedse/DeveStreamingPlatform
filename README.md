@@ -6,12 +6,12 @@ A modern web interface for managing and viewing live streams with OvenMediaEngin
 
 ## Features
 
-- 📺 **Live Stream Management** - View all active streams in real-time
-- �️ **Stream Thumbnails** - Automatic thumbnail generation from live streams
-- �📊 **Stream Statistics** - Monitor bitrate, resolution, codec, and viewer count
-- 🎬 **Integrated Player** - Built-in OvenPlayer for WebRTC playback
-- 🌐 **Multi-Protocol Support** - Generate URLs for SRT, RTMP, WebRTC, and WHIP
-- ⚡ **Low Latency** - WebRTC support for sub-second latency streaming
+- 📺 Live Stream Management - View all active streams in real-time
+- 🖼️ Stream Thumbnails - Automatic thumbnail generation from live streams
+- 📊 Stream Statistics - Monitor bitrate, resolution, codec, and viewer count
+- 🎬 Integrated Player - Built-in OvenPlayer for WebRTC playback
+- 🌐 Multi-Protocol Support - Generate URLs for SRT, RTMP, WebRTC, and WHIP
+- ⚡ Low Latency - WebRTC support for sub-second latency streaming
 
 ## Screenshots
 
