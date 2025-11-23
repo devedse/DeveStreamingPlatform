@@ -5,6 +5,7 @@
     elevation="4"
     rounded="lg"
     @click="goToStream"
+    @mouseup="handleMouseUp"
   >
     <div class="thumbnail-wrapper">
       <transition-group name="crossfade" tag="div" class="image-container">
@@ -69,6 +70,7 @@
         variant="flat"
         block
         @click="goToStream"
+        @mouseup.stop="handleMouseUp"
         class="watch-button"
       >
         <v-icon icon="mdi-play" start></v-icon>
@@ -150,8 +152,23 @@ function handleThumbnailError() {
   thumbnailError.value = true
 }
 
-function goToStream() {
-  router.push({ name: 'stream', params: { name: props.stream.name } })
+function goToStream(event?: MouseEvent) {
+  // Handle Ctrl/Cmd+click to open in new tab
+  if (event && (event.ctrlKey || event.metaKey)) {
+    const route = router.resolve({ name: 'stream', params: { name: props.stream.name } })
+    window.open(route.href, '_blank')
+  } else {
+    router.push({ name: 'stream', params: { name: props.stream.name } })
+  }
+}
+
+function handleMouseUp(event: MouseEvent) {
+  // Handle middle mouse button (button 1)
+  if (event.button === 1) {
+    event.preventDefault()
+    const route = router.resolve({ name: 'stream', params: { name: props.stream.name } })
+    window.open(route.href, '_blank')
+  }
 }
 </script>
 
