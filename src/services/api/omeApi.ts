@@ -28,7 +28,7 @@ class OmeApiClient {
     // Request interceptor for logging
     this.client.interceptors.request.use(
       (config) => {
-        console.log('API Request:', config.method?.toUpperCase(), config.url)
+        //console.log('API Request:', config.method?.toUpperCase(), config.url)
         return config
       },
       (error) => {

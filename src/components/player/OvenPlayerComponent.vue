@@ -59,10 +59,6 @@ function initPlayer() {
       console.log('OvenPlayer is ready')
     })
 
-    player.on('error', (error: any) => {
-      console.error('OvenPlayer error:', error)
-    })
-
     player.on('stateChanged', (state: any) => {
       console.log('Player state changed:', state)
     })
