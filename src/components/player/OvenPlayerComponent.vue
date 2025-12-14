@@ -159,7 +159,6 @@ function restartPlayer() {
   console.log(`[${props.streamName}] Waiting ${delay}ms before restart (attempt ${restartCount + 1}/3)`)
   
   setTimeout(() => {
-    lastRestartTime = Date.now()
     restartCount++
     
     // Destroy and reinitialize
