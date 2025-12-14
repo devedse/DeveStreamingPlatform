@@ -26,6 +26,9 @@ interface LayoutResult {
   totalPixels: number
   colWidths: number[]
   rowHeights: number[]
+  cellWidths: number[]  // Added: actual CSS grid cell widths
+  cellHeights: number[] // Added: actual CSS grid cell heights
+  screenUtilization: number // Added: percentage of screen filled by actual video content
 }
 
 const DEFAULT_ASPECT_RATIO = 16 / 9
@@ -59,17 +62,17 @@ export function useOptimalLayout(streams: Ref<Stream[]>) {
     }))
   })
 
-  // Grid template for the container - uses redistributed cell dimensions
+  // Grid template for the container - uses actual cell dimensions for CSS grid
   const gridTemplateColumns = computed(() => {
-    const { colWidths } = optimalLayout.value
-    if (colWidths.length === 0) return '1fr'
-    return colWidths.map(w => `${w}px`).join(' ')
+    const { cellWidths } = optimalLayout.value
+    if (cellWidths.length === 0) return '1fr'
+    return cellWidths.map(w => `${w}px`).join(' ')
   })
 
   const gridTemplateRows = computed(() => {
-    const { rowHeights } = optimalLayout.value
-    if (rowHeights.length === 0) return '1fr'
-    return rowHeights.map(h => `${h}px`).join(' ')
+    const { cellHeights } = optimalLayout.value
+    if (cellHeights.length === 0) return '1fr'
+    return cellHeights.map(h => `${h}px`).join(' ')
   })
 
   // Handle window resize
@@ -113,6 +116,9 @@ function calculateOptimalLayout(
       totalPixels: 0,
       colWidths: [],
       rowHeights: [],
+      cellWidths: [],
+      cellHeights: [],
+      screenUtilization: 0,
     }
   }
 
@@ -135,8 +141,47 @@ function calculateOptimalLayout(
       containerHeight
     )
 
-    if (!bestLayout || layout.totalPixels > bestLayout.totalPixels) {
+    if (!bestLayout) {
       bestLayout = layout
+    } else {
+      // Calculate how many empty cells each grid has
+      const currentEmpty = (config.rows * config.cols) - streamCount
+      const bestEmpty = (bestLayout.gridConfig.rows * bestLayout.gridConfig.cols) - streamCount
+      
+      // Primary metric: screen utilization (percentage of screen filled with video)
+      const utilizationDiff = layout.screenUtilization - bestLayout.screenUtilization
+      const utilizationThreshold = 0.02 // 2% threshold
+      
+      // If screen utilization is significantly better (>2%), prefer it
+      if (utilizationDiff > utilizationThreshold) {
+        bestLayout = layout
+        continue
+      } else if (utilizationDiff < -utilizationThreshold) {
+        // Current is significantly worse, skip it
+        continue
+      }
+      
+      // Utilization is similar (within 2%) - apply tiebreakers
+      // 1st tiebreaker: prefer fewer empty cells
+      if (currentEmpty < bestEmpty) {
+        bestLayout = layout
+        continue
+      } else if (currentEmpty > bestEmpty) {
+        continue
+      }
+      
+      // 2nd tiebreaker: prefer more balanced (square-ish) grids
+      const currentBalance = Math.abs(config.rows - config.cols)
+      const bestBalance = Math.abs(bestLayout.gridConfig.rows - bestLayout.gridConfig.cols)
+      
+      if (currentBalance < bestBalance) {
+        bestLayout = layout
+      } else if (currentBalance === bestBalance) {
+        // 3rd tiebreaker: prefer higher total pixels (edge case)
+        if (layout.totalPixels > bestLayout.totalPixels) {
+          bestLayout = layout
+        }
+      }
     }
   }
 
@@ -189,6 +234,10 @@ function evaluateGridConfig(
   const cellWidth = cols > 0 ? availableWidth / cols : 0
   const cellHeight = rows > 0 ? availableHeight / rows : 0
 
+  // Initialize arrays for cell dimensions (for CSS grid) and content dimensions (for streams)
+  const cellWidths = Array.from({ length: cols }, () => cellWidth)
+  const cellHeights = Array.from({ length: rows }, () => cellHeight)
+  
   const rowHeights = Array.from({ length: rows }, () => 0)
   const colWidths = Array.from({ length: cols }, () => 0)
 
@@ -211,7 +260,17 @@ function evaluateGridConfig(
 
   const scaled = scaleDimensions(colWidths, rowHeights, availableWidth, availableHeight)
 
-  const redistributed = redistributeSpace({
+  // Check if all streams have identical aspect ratios
+  const hasIdenticalAspectRatios = aspectRatios.every((ar, idx) => 
+    idx === 0 || Math.abs(ar - aspectRatios[0]!) < 0.01
+  )
+
+  // For identical aspect ratios, skip complex redistribution and just use cell dimensions
+  // This ensures streams properly fill their cells in balanced grids
+  const redistributed = hasIdenticalAspectRatios ? {
+    colWidths: Array.from({ length: cols }, () => cellWidth),
+    rowHeights: Array.from({ length: rows }, () => cellHeight),
+  } : redistributeSpace({
     colWidths: scaled.colWidths,
     rowHeights: scaled.rowHeights,
     availableWidth,
@@ -219,6 +278,15 @@ function evaluateGridConfig(
     aspectRatios,
     cols,
   })
+
+  // For CSS grid: use equal cell widths for identical aspect ratios, redistributed widths for mixed
+  const gridCellWidths = hasIdenticalAspectRatios 
+    ? Array.from({ length: cols }, () => cellWidth)
+    : redistributed.colWidths
+  
+  const gridCellHeights = hasIdenticalAspectRatios
+    ? Array.from({ length: rows }, () => cellHeight)
+    : redistributed.rowHeights
 
   const streamLayouts: StreamLayout[] = []
   let totalPixels = 0
@@ -244,12 +312,19 @@ function evaluateGridConfig(
     totalPixels += width * height
   }
 
+  // Calculate screen utilization: what percentage of the container is filled with actual video content
+  const containerArea = containerWidth * containerHeight
+  const screenUtilization = containerArea > 0 ? totalPixels / containerArea : 0
+
   return {
     gridConfig: config,
     streamLayouts,
     totalPixels,
     colWidths: redistributed.colWidths,
     rowHeights: redistributed.rowHeights,
+    cellWidths: gridCellWidths,
+    cellHeights: gridCellHeights,
+    screenUtilization,
   }
 }
 

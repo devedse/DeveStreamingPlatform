@@ -92,4 +92,115 @@ describe('useOptimalLayout', () => {
       expect(optimalLayout.value.streamLayouts[0]?.height).toBeCloseTo(stream1Height, 1)
     })
   })
+
+  describe('Optimal Layout for Multiple 3440x1440 Streams', () => {
+    it('should create optimal 2-row layout for 3x 3440x1440 streams on 3440x1440 screen', () => {
+      const streams = ref<Stream[]>([
+        { name: 'stream1', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream2', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream3', width: 3440, height: 1440, aspectRatio: 3440/1440 }
+      ])
+      mockWindowSize(3440, 1440)
+      
+      const { optimalLayout, gridTemplateColumns, gridTemplateRows } = useOptimalLayout(streams)
+
+      console.log('3x streams - Grid Configuration:', optimalLayout.value.gridConfig)
+      console.log('3x streams - Grid Template Columns:', gridTemplateColumns.value)
+      console.log('3x streams - Grid Template Rows:', gridTemplateRows.value)
+      
+      // Optimal layout should be 2 rows
+      // Could be 2 columns with bottom stream spanning, or arranged to fill space efficiently
+      expect(optimalLayout.value.gridConfig.rows).toBe(2)
+      
+      // Each stream should be approximately 50% of the screen dimensions
+      // With 3440x1440 screen and 2.39:1 aspect ratio streams
+      // Streams should be sized to fill space efficiently
+      optimalLayout.value.streamLayouts.forEach((layout, index) => {
+        console.log(`Stream ${index + 1} dimensions:`, layout?.width, 'x', layout?.height)
+        
+        // Each stream should maintain its aspect ratio
+        if (layout) {
+          const expectedHeight = layout.width / (3440 / 1440)
+          expect(layout.height).toBeCloseTo(expectedHeight, 1)
+        }
+      })
+      
+      // Verify all streams fit within the viewport
+      optimalLayout.value.streamLayouts.forEach((layout) => {
+        if (layout) {
+          expect(layout.width).toBeLessThanOrEqual(3440)
+          expect(layout.height).toBeLessThanOrEqual(1440)
+        }
+      })
+    })
+
+    it('should create optimal 2x2 grid for 4x 3440x1440 streams on 3440x1440 screen', () => {
+      const streams = ref<Stream[]>([
+        { name: 'stream1', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream2', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream3', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream4', width: 3440, height: 1440, aspectRatio: 3440/1440 }
+      ])
+      mockWindowSize(3440, 1440)
+      
+      const { optimalLayout, gridTemplateColumns, gridTemplateRows } = useOptimalLayout(streams)
+
+      console.log('4x streams - Grid Configuration:', optimalLayout.value.gridConfig)
+      console.log('4x streams - Grid Template Columns:', gridTemplateColumns.value)
+      console.log('4x streams - Grid Template Rows:', gridTemplateRows.value)
+      
+      // Optimal layout should be 2x2 grid
+      expect(optimalLayout.value.gridConfig.cols).toBe(2)
+      expect(optimalLayout.value.gridConfig.rows).toBe(2)
+      
+      // Parse column widths and row heights
+      const columnWidths = gridTemplateColumns.value
+        .split(' ')
+        .map(w => parseFloat(w.replace('px', '')))
+      
+      const rowHeights = gridTemplateRows.value
+        .split(' ')
+        .map(h => parseFloat(h.replace('px', '')))
+      
+      console.log('Column Widths:', columnWidths)
+      console.log('Row Heights:', rowHeights)
+      
+      // Each stream should be approximately 50% of screen dimensions
+      // Account for gaps and borders
+      const GAP_SIZE = 2
+      const BORDER_SIZE = 2
+      const totalHorizontalSpacing = (2 - 1) * GAP_SIZE + 2 * BORDER_SIZE // 1 gap + 2 columns * border
+      const totalVerticalSpacing = (2 - 1) * GAP_SIZE + 2 * BORDER_SIZE // 1 gap + 2 rows * border
+      
+      const expectedColumnWidth = (3440 - totalHorizontalSpacing) / 2
+      const expectedRowHeight = (1440 - totalVerticalSpacing) / 2
+      
+      console.log('Expected column width:', expectedColumnWidth)
+      console.log('Expected row height:', expectedRowHeight)
+      
+      // Columns should be roughly equal and fill the width
+      columnWidths.forEach((width) => {
+        expect(width).toBeCloseTo(expectedColumnWidth, 1)
+      })
+      
+      // Rows should be roughly equal and fill the height
+      rowHeights.forEach((height) => {
+        expect(height).toBeCloseTo(expectedRowHeight, 1)
+      })
+      
+      // Each stream should maintain its aspect ratio and fit in its cell
+      optimalLayout.value.streamLayouts.forEach((layout, index) => {
+        console.log(`Stream ${index + 1} dimensions:`, layout?.width, 'x', layout?.height)
+        
+        if (layout) {
+          const expectedHeight = layout.width / (3440 / 1440)
+          expect(layout.height).toBeCloseTo(expectedHeight, 1)
+          
+          // Each stream should fit within its grid cell
+          expect(layout.width).toBeLessThanOrEqual(expectedColumnWidth)
+          expect(layout.height).toBeLessThanOrEqual(expectedRowHeight)
+        }
+      })
+    })
+  })
 })
