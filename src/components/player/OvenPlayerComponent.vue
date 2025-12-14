@@ -38,7 +38,6 @@ const props = withDefaults(defineProps<Props>(), {
 const playerId = ref(`ovenplayer-${props.streamName}`)
 const streamEnded = ref(false)
 let player: any = null
-let lastRestartTime = 0
 let restartCount = 0
 let streamCheckInterval: number | null = null
 
