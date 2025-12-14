@@ -234,10 +234,6 @@ function evaluateGridConfig(
   const cellWidth = cols > 0 ? availableWidth / cols : 0
   const cellHeight = rows > 0 ? availableHeight / rows : 0
 
-  // Initialize arrays for cell dimensions (for CSS grid) and content dimensions (for streams)
-  const cellWidths = Array.from({ length: cols }, () => cellWidth)
-  const cellHeights = Array.from({ length: rows }, () => cellHeight)
-  
   const rowHeights = Array.from({ length: rows }, () => 0)
   const colWidths = Array.from({ length: cols }, () => 0)
 
