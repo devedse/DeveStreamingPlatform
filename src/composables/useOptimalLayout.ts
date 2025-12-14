@@ -53,12 +53,8 @@ export function useOptimalLayout(streams: Ref<Stream[]>) {
   // Get individual stream styles
   const streamStyles = computed(() => {
     return optimalLayout.value.streamLayouts.map(layout => ({
-      width: `${layout.width}px`,
-      height: `${layout.height}px`,
       gridRow: layout.gridRow,
       gridColumn: layout.gridCol,
-      justifySelf: 'center',
-      alignSelf: 'center',
     }))
   })
 
@@ -263,17 +259,72 @@ function evaluateGridConfig(
 
   // For identical aspect ratios, skip complex redistribution and just use cell dimensions
   // This ensures streams properly fill their cells in balanced grids
-  const redistributed = hasIdenticalAspectRatios ? {
-    colWidths: Array.from({ length: cols }, () => cellWidth),
-    rowHeights: Array.from({ length: rows }, () => cellHeight),
-  } : redistributeSpace({
-    colWidths: scaled.colWidths,
-    rowHeights: scaled.rowHeights,
-    availableWidth,
-    availableHeight,
-    aspectRatios,
-    cols,
-  })
+  let redistributed: { colWidths: number[], rowHeights: number[] }
+  
+  if (hasIdenticalAspectRatios) {
+    redistributed = {
+      colWidths: Array.from({ length: cols }, () => cellWidth),
+      rowHeights: Array.from({ length: rows }, () => cellHeight),
+    }
+  } else if (rows === 1) {
+    // For single-row layouts with mixed aspects, use the existing redistribution logic
+    redistributed = redistributeSpace({
+      colWidths: scaled.colWidths,
+      rowHeights: scaled.rowHeights,
+      availableWidth,
+      availableHeight,
+      aspectRatios,
+      cols,
+    })
+  } else {
+    // For multi-row layouts with mixed aspects, calculate optimal column widths per row
+    // This gives much better space utilization than the old single-row assumption
+    const finalColWidths = Array.from({ length: cols }, () => 0)
+    const finalRowHeights = Array.from({ length: rows }, () => 0)
+    
+    for (let row = 0; row < rows; row++) {
+      const rowStartIdx = row * cols
+      const rowEndIdx = Math.min(rowStartIdx + cols, streamCount)
+      const rowStreamCount = rowEndIdx - rowStartIdx
+      const rowAspectRatios = aspectRatios.slice(rowStartIdx, rowEndIdx)
+      
+      // Calculate ideal heights that would allow streams to fill available width
+      const totalAspectRatio = rowAspectRatios.reduce((sum, ar) => sum + ar, 0)
+      const idealRowHeight = totalAspectRatio > 0 ? availableWidth / totalAspectRatio : cellHeight
+      
+      // Calculate stream widths at this height
+      const rowStreamWidths = rowAspectRatios.map(ar => idealRowHeight * ar)
+      
+      // Check if they fit within available height
+      const fitsHeight = idealRowHeight <= availableHeight / rows
+      
+      if (fitsHeight) {
+        // Use ideal height - streams will fill width
+        finalRowHeights[row] = idealRowHeight
+        
+        // Distribute widths to columns (each stream in this row gets its proportional width)
+        for (let col = 0; col < rowStreamCount; col++) {
+          finalColWidths[col] = Math.max(finalColWidths[col] ?? 0, rowStreamWidths[col] ?? 0)
+        }
+      } else {
+        // Height-constrained: use equal cell height and fit streams within cells
+        const rowCellHeight = availableHeight / rows
+        finalRowHeights[row] = rowCellHeight
+        
+        for (let col = 0; col < rowStreamCount; col++) {
+          const streamIdx = rowStartIdx + col
+          const ar = aspectRatios[streamIdx] ?? DEFAULT_ASPECT_RATIO
+          const streamWidth = rowCellHeight * ar
+          finalColWidths[col] = Math.max(finalColWidths[col] ?? 0, streamWidth)
+        }
+      }
+    }
+    
+    redistributed = {
+      colWidths: finalColWidths,
+      rowHeights: finalRowHeights,
+    }
+  }
 
   // For CSS grid: use equal cell widths for identical aspect ratios, redistributed widths for mixed
   const gridCellWidths = hasIdenticalAspectRatios 

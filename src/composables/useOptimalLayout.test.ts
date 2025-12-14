@@ -202,5 +202,84 @@ describe('useOptimalLayout', () => {
         }
       })
     })
+
+    it('should create optimal 2x2 grid for 3x 3440x1440 + 1x 2560x1440 streams on 3440x1440 screen', () => {
+      const streams = ref<Stream[]>([
+        { name: 'stream1', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream2', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream3', width: 3440, height: 1440, aspectRatio: 3440/1440 },
+        { name: 'stream4', width: 2560, height: 1440, aspectRatio: 2560/1440 }
+      ])
+      mockWindowSize(3440, 1440)
+      
+      const { optimalLayout, gridTemplateColumns, gridTemplateRows } = useOptimalLayout(streams)
+
+      console.log('Mixed 4x streams - Grid Configuration:', optimalLayout.value.gridConfig)
+      console.log('Mixed 4x streams - Grid Template Columns:', gridTemplateColumns.value)
+      console.log('Mixed 4x streams - Grid Template Rows:', gridTemplateRows.value)
+      console.log('Mixed 4x streams - Screen Utilization:', optimalLayout.value.screenUtilization)
+      
+      // Optimal layout should be 2x2 grid (best screen utilization ~92%)
+      expect(optimalLayout.value.gridConfig.cols).toBe(2)
+      expect(optimalLayout.value.gridConfig.rows).toBe(2)
+      
+      // Parse column widths and row heights
+      const columnWidths = gridTemplateColumns.value
+        .split(' ')
+        .map(w => parseFloat(w.replace('px', '')))
+      
+      const rowHeights = gridTemplateRows.value
+        .split(' ')
+        .map(h => parseFloat(h.replace('px', '')))
+      
+      console.log('Column Widths:', columnWidths)
+      console.log('Row Heights:', rowHeights)
+      
+      // With mixed aspect ratios in a 2x2 grid, streams fill their rows optimally
+      // The algorithm now calculates variable-width columns per row for maximum utilization
+      
+      // All streams should maintain their aspect ratios
+      optimalLayout.value.streamLayouts.forEach((layout, index) => {
+        console.log(`Stream ${index + 1} dimensions:`, layout?.width, 'x', layout?.height)
+        
+        if (layout) {
+          const stream = streams.value[index]!
+          const expectedAspectRatio = stream.width! / stream.height!
+          const actualAspectRatio = layout.width / layout.height
+          expect(actualAspectRatio).toBeCloseTo(expectedAspectRatio, 2)
+          
+          // Each stream should fit within the viewport
+          expect(layout.width).toBeLessThanOrEqual(3440)
+          expect(layout.height).toBeLessThanOrEqual(1440)
+        }
+      })
+      
+      // Verify screen utilization is reasonable (should be better than 1x4 or 4x1)
+      const GAP_SIZE = 2
+      const BORDER_SIZE = 2
+      const cols = optimalLayout.value.gridConfig.cols
+      const rows = optimalLayout.value.gridConfig.rows
+      
+      const totalHorizontalSpacing = (cols - 1) * GAP_SIZE + cols * BORDER_SIZE
+      const totalVerticalSpacing = (rows - 1) * GAP_SIZE + rows * BORDER_SIZE
+      
+      const totalGridWidth = columnWidths.reduce((sum, w) => sum + w, 0)
+      const totalGridHeight = rowHeights.reduce((sum, h) => sum + h, 0)
+      
+      const totalUsedWidth = totalGridWidth + totalHorizontalSpacing
+      const totalUsedHeight = totalGridHeight + totalVerticalSpacing
+      
+      console.log('Total Used Width:', totalUsedWidth, '/ 3440')
+      console.log('Total Used Height:', totalUsedHeight, '/ 1440')
+      console.log('Screen Utilization:', optimalLayout.value.screenUtilization)
+      
+      // Grid should approximately fill the container (may have some letterboxing)
+      expect(totalUsedWidth).toBeLessThanOrEqual(3440 + 1)
+      expect(totalUsedHeight).toBeLessThanOrEqual(1440 + 1)
+      
+      // Screen utilization should be excellent with the new per-row redistribution (>90%)
+      console.log('Screen Utilization:', optimalLayout.value.screenUtilization)
+      expect(optimalLayout.value.screenUtilization).toBeGreaterThan(0.9)
+    })
   })
 })
