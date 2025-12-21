@@ -397,8 +397,8 @@ watch(
 
 watch(availableStreams, (streams) => {
   const names = new Set(streams.map(stream => stream.name))
-  excludedNames.value = excludedNames.value.filter(name => names.has(name))
-  customNames.value = customNames.value.filter(name => names.has(name))
+  // Don't filter excludedNames or customNames - keep them even if streams are offline
+  // This allows the URL to remain stable when streams go offline
 
   if (showSelector.value) {
     tempSelectedNames.value = tempSelectedNames.value.filter(name => names.has(name))
