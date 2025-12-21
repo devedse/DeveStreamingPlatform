@@ -15,12 +15,12 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "axios": "^1.13.1",
-    "hls.js": "^1.6.13",
+    "hls.js": "^1.6.15",
     "ovenplayer": "0.10.46-beta.0",
     "pinia": "^3.0.3",
-    "vue": "^3.5.22",
+    "vue": "^3.5.26",
     "vue-router": "^4.6.3",
-    "vuetify": "^3.10.5"
+    "vuetify": "^3.11.4"
   },
   "devDependencies": {
     "@types/node": "^24.9.2",
@@ -36,7 +36,7 @@
     "vite": "npm:rolldown-vite@7.1.14",
     "vite-plugin-vuetify": "^2.1.2",
     "vitest": "^4.0.6",
-    "vue-tsc": "^3.1.0"
+    "vue-tsc": "^3.1.1"
   },
   "pnpm": {
     "overrides": {
