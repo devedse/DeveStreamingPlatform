@@ -42,6 +42,17 @@
               <v-icon icon="mdi-record-rec" size="x-small" class="mr-1 pulse-animation"></v-icon>
               REC
             </v-chip>
+            
+            <!-- Pulled stream indicator -->
+            <v-chip
+              v-if="isPulledStream"
+              color="secondary"
+              size="small"
+              class="pulled-badge elevation-3"
+            >
+              <v-icon icon="mdi-download-network" size="x-small" class="mr-1"></v-icon>
+              PULL
+            </v-chip>
           </div>
           
           <!-- Viewer count badge -->
@@ -95,6 +106,12 @@ const router = useRouter()
 const thumbnailError = ref(false)
 const displayedThumbnail = ref<string>('')
 const pendingThumbnail = ref<string>('')
+
+// Check if this is a pulled stream (RtspPull, OvtPull, etc.)
+const isPulledStream = computed(() => {
+  const sourceType = props.stream.sourceType?.toLowerCase() || ''
+  return sourceType.includes('pull')
+})
 
 // Get the thumbnail URL from OME
 const thumbnailUrl = computed(() => {

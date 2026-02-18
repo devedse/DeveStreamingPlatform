@@ -73,6 +73,11 @@ export const useStreamStore = defineStore('streams', () => {
             stream.aspectRatio = width && height ? width / height : DEFAULT_ASPECT_RATIO
           }
 
+          // Capture source type (RtspPull, WebRTC, etc.)
+          if (detailsResponse?.response?.input.sourceType) {
+            stream.sourceType = detailsResponse.response.input.sourceType
+          }
+
           stream.isRecording = recordings.some((recording) =>
             recording.stream.name === stream.name &&
             ['recording', 'ready', 'stopping'].includes(recording.state)

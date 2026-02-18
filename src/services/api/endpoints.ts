@@ -16,6 +16,12 @@ export const endpoints = {
   startRecording: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:startRecord`,
   stopRecording: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:stopRecord`,
   getRecordingState: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}:records`,
+  
+  // Pull stream endpoint
+  createPullStream: () => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}/streams`,
+  
+  // Delete stream endpoint
+  deleteStream: (streamName: string) => `/v1/vhosts/${config.ome.vhost}/apps/${config.ome.app}/streams/${streamName}`,
 }
 
 // Generate full URL for stream details (useful for opening in browser)

@@ -12,13 +12,15 @@
         </p>
       </div>
       
-      <div class="d-flex gap-2 align-center">
+      <div class="d-flex align-center">
         <v-btn
           icon="mdi-refresh"
           variant="text"
           :loading="loading"
           @click="refreshStreams"
+          class="mr-3"
         ></v-btn>
+        <PullStreamDialog />
         <AddStreamDialog />
       </div>
     </div>
@@ -45,6 +47,7 @@ import { onMounted, onBeforeUnmount, computed } from 'vue'
 import { useStreamStore } from '@/stores/streams'
 import StreamGrid from '@/components/streams/StreamGrid.vue'
 import AddStreamDialog from '@/components/streams/AddStreamDialog.vue'
+import PullStreamDialog from '@/components/streams/PullStreamDialog.vue'
 
 const streamStore = useStreamStore()
 

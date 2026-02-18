@@ -55,6 +55,7 @@ export interface StreamInfo {
   width?: number
   height?: number
   aspectRatio?: number
+  sourceType?: string
 }
 
 // Stream Details with variants
@@ -174,4 +175,21 @@ export interface RecordingResponse {
   statusCode: number
   message: string
   response: RecordingTask | RecordingTask[]
+}
+
+// Pull Stream types
+export interface PullStreamRequest {
+  name: string
+  urls: string[]
+  properties?: {
+    persistent?: boolean
+    noInputFailoverTimeoutMs?: number
+    unusedStreamDeletionTimeoutMs?: number
+    ignoreRtcpSRTimestamp?: boolean
+  }
+}
+
+export interface PullStreamResponse {
+  statusCode: number
+  message: string
 }

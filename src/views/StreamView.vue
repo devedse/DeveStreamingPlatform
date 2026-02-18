@@ -53,16 +53,63 @@
         <div class="mt-4">
           <RecordingControls :stream-name="streamName" />
         </div>
+        
+        <!-- Stop pulling stream button -->
+        <div v-if="isPulledStream" class="mt-4">
+          <v-card elevation="2">
+            <v-card-title class="text-subtitle-1">
+              <v-icon icon="mdi-download-network" start color="secondary"></v-icon>
+              Pulled Stream
+            </v-card-title>
+            <v-card-text>
+              <p class="text-body-2 mb-3">
+                This stream is being pulled from an external source.
+              </p>
+              <v-btn
+                color="error"
+                variant="flat"
+                block
+                @click="showStopDialog = true"
+                :loading="deletingStream"
+              >
+                <v-icon icon="mdi-stop-circle" start></v-icon>
+                Stop Pulling Stream
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </div>
       </div>
     </div>
+    
+    <!-- Confirmation dialog -->
+    <v-dialog v-model="showStopDialog" max-width="450">
+      <v-card>
+        <v-card-title class="text-h6">
+          <v-icon icon="mdi-alert" color="error" class="mr-2"></v-icon>
+          Stop Pulling Stream?
+        </v-card-title>
+        <v-card-text>
+          <p>Are you sure you want to stop pulling <strong>{{ streamName }}</strong>?</p>
+          <p class="text-body-2 text-grey mt-2">This will terminate the stream and disconnect all viewers.</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showStopDialog = false" :disabled="deletingStream">Cancel</v-btn>
+          <v-btn color="error" variant="flat" @click="stopPulling" :loading="deletingStream">
+            Stop Stream
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
 import { generatePlaybackSources, generateStreamDetailsUrl } from '@/services/api/endpoints'
+import { omeApi } from '@/services/api/omeApi'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
 import StreamStats from '@/components/streams/StreamStats.vue'
 import RecordingControls from '@/components/streams/RecordingControls.vue'
@@ -76,9 +123,38 @@ const playbackSources = computed(() => generatePlaybackSources(streamName.value)
 const stats = computed(() => streamStore.activeStreamStats)
 const statsLoading = computed(() => streamStore.loading)
 
+const showStopDialog = ref(false)
+const deletingStream = ref(false)
+
+// Check if this is a pulled stream
+const isPulledStream = computed(() => {
+  const stream = streamStore.streams.find(s => s.name === streamName.value)
+  const sourceType = stream?.sourceType?.toLowerCase() || ''
+  return sourceType.includes('pull')
+})
+
 function openStreamDetailsDebug() {
   const url = generateStreamDetailsUrl(streamName.value)
   window.open(url, '_blank')
+}
+
+async function stopPulling() {
+  deletingStream.value = true
+  try {
+    const success = await omeApi.deleteStream(streamName.value)
+    if (success) {
+      showStopDialog.value = false
+      // Navigate back to home after stopping
+      router.push('/')
+    } else {
+      alert('Failed to stop pulling stream. Please try again.')
+    }
+  } catch (error) {
+    console.error('Error stopping stream:', error)
+    alert('Error stopping stream. Please check console for details.')
+  } finally {
+    deletingStream.value = false
+  }
 }
 
 onMounted(async () => {

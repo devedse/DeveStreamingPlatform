@@ -8,7 +8,9 @@ import {
   type StopRecordingRequest,
   type RecordingStateRequest,
   type RecordingResponse,
-  type RecordingTask
+  type RecordingTask,
+  type PullStreamRequest,
+  type PullStreamResponse
 } from './types'
 import { endpoints } from './endpoints'
 
@@ -131,6 +133,33 @@ class OmeApiClient {
     } catch (error) {
       console.error('Failed to fetch recording state:', error)
       return []
+    }
+  }
+
+  // Create a pulled stream (RTSP, OVT)
+  async createPullStream(request: PullStreamRequest): Promise<boolean> {
+    try {
+      const response = await this.client.post<PullStreamResponse>(
+        endpoints.createPullStream(),
+        request
+      )
+      return response.data.statusCode === 201
+    } catch (error) {
+      console.error('Failed to create pull stream:', error)
+      return false
+    }
+  }
+
+  // Delete a stream (stops pulling)
+  async deleteStream(streamName: string): Promise<boolean> {
+    try {
+      const response = await this.client.delete(
+        endpoints.deleteStream(streamName)
+      )
+      return response.status === 200 || response.status === 204
+    } catch (error) {
+      console.error('Failed to delete stream:', error)
+      return false
     }
   }
 }
