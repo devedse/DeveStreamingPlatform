@@ -113,21 +113,6 @@
         </v-btn>
       </template>
       <template v-else>
-        <!-- Public/Private toggle (authenticated users only) -->
-        <v-btn
-          v-if="authStore.isAuthenticated"
-          :icon="stream.isPublic ? 'mdi-earth-off' : 'mdi-earth'"
-          variant="text"
-          size="small"
-          :color="stream.isPublic ? 'grey' : 'success'"
-          :loading="togglingVisibility"
-          @click.stop="toggleVisibility"
-        >
-          <v-icon>{{ stream.isPublic ? 'mdi-earth-off' : 'mdi-earth' }}</v-icon>
-          <v-tooltip activator="parent" location="bottom">
-            {{ stream.isPublic ? 'Make Private' : 'Make Public' }}
-          </v-tooltip>
-        </v-btn>
         <v-btn
           color="primary"
           variant="flat"
@@ -160,7 +145,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 const streamStore = useStreamStore()
 const displayedThumbnail = ref<string>('')
-const togglingVisibility = ref(false)
 const deletingOrphan = ref(false)
 
 // Check if this is a pulled stream (RtspPull, OvtPull, etc.)
@@ -207,21 +191,6 @@ watch(thumbnailUrl, (newUrl) => {
     displayedThumbnail.value = placeholderImage.value
   }
 }, { immediate: true })
-
-async function toggleVisibility() {
-  togglingVisibility.value = true
-  try {
-    if (props.stream.isPublic) {
-      await streamStore.makeStreamPrivate(props.stream.name)
-    } else {
-      await streamStore.makeStreamPublic(props.stream.name)
-    }
-  } catch (err) {
-    console.error('Failed to toggle stream visibility:', err)
-  } finally {
-    togglingVisibility.value = false
-  }
-}
 
 async function deleteOrphan() {
   deletingOrphan.value = true

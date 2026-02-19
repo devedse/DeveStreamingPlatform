@@ -81,6 +81,31 @@
           
           <!-- Admin-only controls -->
           <template v-if="authStore.isAuthenticated">
+            <!-- Public/Private visibility toggle -->
+            <div class="mt-4">
+              <v-card elevation="2">
+                <v-card-title class="text-subtitle-1">
+                  <v-icon :icon="currentStream?.isPublic ? 'mdi-earth' : 'mdi-earth-off'" start :color="currentStream?.isPublic ? 'success' : 'grey'"></v-icon>
+                  Stream Visibility
+                </v-card-title>
+                <v-card-text>
+                  <p class="text-body-2 mb-3">
+                    {{ currentStream?.isPublic ? 'This stream is visible to everyone without login.' : 'This stream is private and requires login to view.' }}
+                  </p>
+                  <v-btn
+                    :color="currentStream?.isPublic ? 'grey' : 'success'"
+                    variant="flat"
+                    block
+                    :loading="togglingVisibility"
+                    @click="toggleVisibility"
+                  >
+                    <v-icon :icon="currentStream?.isPublic ? 'mdi-earth-off' : 'mdi-earth'" start></v-icon>
+                    {{ currentStream?.isPublic ? 'Make Private' : 'Make Public' }}
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </div>
+
             <div class="mt-4">
               <RecordingControls :stream-name="streamName" />
             </div>
@@ -160,8 +185,13 @@ const statsLoading = computed(() => streamStore.loading)
 
 const showStopDialog = ref(false)
 const deletingStream = ref(false)
+const togglingVisibility = ref(false)
 const streamAccessible = ref<boolean | null>(null) // null = checking, true = accessible, false = not
 const isPublicStream = ref(false)
+
+const currentStream = computed(() =>
+  streamStore.streams.find(s => s.name === streamName.value)
+)
 
 // Generate playback sources based on auth state and stream visibility
 const playbackSources = computed(() => {
@@ -204,6 +234,21 @@ async function stopPulling() {
     alert('Error stopping stream. Please check console for details.')
   } finally {
     deletingStream.value = false
+  }
+}
+
+async function toggleVisibility() {
+  togglingVisibility.value = true
+  try {
+    if (currentStream.value?.isPublic) {
+      await streamStore.makeStreamPrivate(streamName.value)
+    } else {
+      await streamStore.makeStreamPublic(streamName.value)
+    }
+  } catch (err) {
+    console.error('Failed to toggle stream visibility:', err)
+  } finally {
+    togglingVisibility.value = false
   }
 }
 
