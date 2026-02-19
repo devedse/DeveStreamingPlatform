@@ -160,7 +160,6 @@ const router = useRouter()
 const authStore = useAuthStore()
 const streamStore = useStreamStore()
 const displayedThumbnail = ref<string>('')
-const pendingThumbnail = ref<string>('')
 const togglingVisibility = ref(false)
 const deletingOrphan = ref(false)
 
@@ -199,26 +198,14 @@ if (!displayedThumbnail.value) {
   displayedThumbnail.value = placeholderImage.value
 }
 
-// Watch for thumbnail URL changes and preload before updating
+// Update displayed thumbnail when URL changes
+// v-img handles loading; transition-group provides crossfade
 watch(thumbnailUrl, (newUrl) => {
-  if (!newUrl || newUrl === displayedThumbnail.value) return
-  pendingThumbnail.value = newUrl
-
-  const img = new Image()
-  img.onload = () => {
-    if (pendingThumbnail.value === newUrl) {
-      displayedThumbnail.value = newUrl
-      pendingThumbnail.value = ''
-    }
+  if (newUrl) {
+    displayedThumbnail.value = newUrl
+  } else {
+    displayedThumbnail.value = placeholderImage.value
   }
-  img.onerror = () => {
-    // Show placeholder on failure; next poll cycle retries automatically
-    if (pendingThumbnail.value === newUrl) {
-      displayedThumbnail.value = placeholderImage.value
-      pendingThumbnail.value = ''
-    }
-  }
-  img.src = newUrl
 }, { immediate: true })
 
 async function toggleVisibility() {
