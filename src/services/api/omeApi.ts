@@ -181,6 +181,20 @@ class OmeApiClient {
     }
   }
 
+  // Get multiplex channels from the public app (no auth required)
+  // These represent streams configured as public, even if not currently live
+  async getPublicMultiplexChannels(): Promise<string[]> {
+    try {
+      const response = await this.publicClient.get<MultiplexChannelListResponse>(
+        endpoints.getMultiplexChannels(config.ome.appPublic)
+      )
+      return response.data.response || []
+    } catch (error) {
+      console.error('Failed to fetch multiplex channels:', error)
+      return []
+    }
+  }
+
   // Get public stream statistics
   async getPublicStreamStats(streamName: string): Promise<StreamStatsResponse | null> {
     try {
@@ -211,22 +225,6 @@ class OmeApiClient {
   // Public/Private Toggle (Authenticated)
   // Uses MultiplexChannel / stream:// protocol for zero-copy internal relay
   // ============================================
-
-  /**
-   * Get all multiplex channels from the public app.
-   * These represent streams that have been configured as public.
-   */
-  async getMultiplexChannels(): Promise<string[]> {
-    try {
-      const response = await this.client.get<MultiplexChannelListResponse>(
-        endpoints.getMultiplexChannels(config.ome.appPublic)
-      )
-      return response.data.response || []
-    } catch (error) {
-      console.error('Failed to fetch multiplex channels:', error)
-      return []
-    }
-  }
 
   /**
    * Make a stream public by creating a MultiplexChannel in the public app.

@@ -68,7 +68,7 @@ export const useStreamStore = defineStore('streams', () => {
     // (this shows intent, even if the stream isn't live in app-public yet)
     const [streamNames, publicNames] = await Promise.all([
       omeApi.getStreams(),
-      omeApi.getMultiplexChannels(),
+      omeApi.getPublicMultiplexChannels(),
     ])
 
     publicStreamNames.value = new Set(publicNames)
@@ -133,7 +133,13 @@ export const useStreamStore = defineStore('streams', () => {
    * (for unauthenticated users)
    */
   async function fetchPublicStreamsOnly() {
-    const publicNames = await omeApi.getPublicStreams()
+    // MultiplexChannel outputs may not appear in /streams, so query both
+    // and merge the results to get the full set of public stream names
+    const [streamNames, multiplexNames] = await Promise.all([
+      omeApi.getPublicStreams(),
+      omeApi.getPublicMultiplexChannels(),
+    ])
+    const publicNames = [...new Set([...streamNames, ...multiplexNames])]
     publicStreamNames.value = new Set(publicNames)
     const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
 
@@ -248,11 +254,15 @@ export const useStreamStore = defineStore('streams', () => {
 
   /**
    * Check if a specific stream exists in the public app.
-   * Uses the public API client so it works for unauthenticated users too.
+   * Checks both /streams and /multiplexChannels via the public API
+   * so it works for unauthenticated users.
    */
   async function isStreamPublic(streamName: string): Promise<boolean> {
-    const publicNames = await omeApi.getPublicStreams()
-    return publicNames.includes(streamName)
+    const [streamNames, multiplexNames] = await Promise.all([
+      omeApi.getPublicStreams(),
+      omeApi.getPublicMultiplexChannels(),
+    ])
+    return streamNames.includes(streamName) || multiplexNames.includes(streamName)
   }
 
   // Helper function to calculate total viewer count from connections
