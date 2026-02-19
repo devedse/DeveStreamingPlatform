@@ -31,9 +31,14 @@ export const useStreamStore = defineStore('streams', () => {
     streams.value.filter((s: StreamInfo) => s.isLive && s.isPublic)
   )
 
-  /** Streams to display based on auth state */
+  /** Streams to display based on auth state (excludes orphaned) */
   const visibleStreams = computed(() =>
     authStore.isAuthenticated ? liveStreams.value : publicLiveStreams.value
+  )
+
+  /** Orphaned public streams (MultiplexChannel with no matching source stream) */
+  const orphanedStreams = computed(() =>
+    streams.value.filter((s: StreamInfo) => s.isOrphaned)
   )
 
   const totalViewers = computed(() =>
@@ -89,7 +94,23 @@ export const useStreamStore = defineStore('streams', () => {
       }
     })
 
-    streams.value = nextStreams
+    // Detect orphaned public streams (exist in public app but not in main app)
+    const mainStreamSet = new Set(streamNames)
+    const orphanedStreams: StreamInfo[] = publicNames
+      .filter(name => !mainStreamSet.has(name))
+      .map((name) => {
+        const existing = existingMap.get(name)
+        return {
+          name,
+          isLive: false,
+          viewerCount: existing?.viewerCount ?? 0,
+          isPublic: true,
+          isOrphaned: true,
+          stats: existing?.stats,
+        }
+      })
+
+    streams.value = [...nextStreams, ...orphanedStreams]
 
     const recordings = await omeApi.getRecordingState()
 
@@ -133,13 +154,7 @@ export const useStreamStore = defineStore('streams', () => {
    * (for unauthenticated users)
    */
   async function fetchPublicStreamsOnly() {
-    // MultiplexChannel outputs may not appear in /streams, so query both
-    // and merge the results to get the full set of public stream names
-    const [streamNames, multiplexNames] = await Promise.all([
-      omeApi.getPublicStreams(),
-      omeApi.getPublicMultiplexChannels(),
-    ])
-    const publicNames = [...new Set([...streamNames, ...multiplexNames])]
+    const publicNames = await omeApi.getPublicStreams()
     publicStreamNames.value = new Set(publicNames)
     const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
 
@@ -253,16 +268,24 @@ export const useStreamStore = defineStore('streams', () => {
   }
 
   /**
+   * Delete an orphaned public stream (MultiplexChannel with no matching source stream)
+   */
+  async function deleteOrphanedStream(streamName: string): Promise<boolean> {
+    const success = await omeApi.makeStreamPrivate(streamName)
+    if (success) {
+      publicStreamNames.value.delete(streamName)
+      streams.value = streams.value.filter(s => !(s.name === streamName && s.isOrphaned))
+    }
+    return success
+  }
+
+  /**
    * Check if a specific stream exists in the public app.
-   * Checks both /streams and /multiplexChannels via the public API
-   * so it works for unauthenticated users.
+   * Uses the public API client so it works for unauthenticated users too.
    */
   async function isStreamPublic(streamName: string): Promise<boolean> {
-    const [streamNames, multiplexNames] = await Promise.all([
-      omeApi.getPublicStreams(),
-      omeApi.getPublicMultiplexChannels(),
-    ])
-    return streamNames.includes(streamName) || multiplexNames.includes(streamName)
+    const publicNames = await omeApi.getPublicStreams()
+    return publicNames.includes(streamName)
   }
 
   // Helper function to calculate total viewer count from connections
@@ -308,6 +331,7 @@ export const useStreamStore = defineStore('streams', () => {
     liveStreams,
     publicLiveStreams,
     visibleStreams,
+    orphanedStreams,
     totalViewers,
     // Actions
     fetchStreams,
@@ -316,6 +340,7 @@ export const useStreamStore = defineStore('streams', () => {
     clearActiveStream,
     makeStreamPublic,
     makeStreamPrivate,
+    deleteOrphanedStream,
     isStreamPublic,
     startPolling,
     stopPolling,

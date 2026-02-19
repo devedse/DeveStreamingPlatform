@@ -1,10 +1,11 @@
 <template>
   <v-card
     class="stream-card"
+    :class="{ 'orphaned-card': stream.isOrphaned }"
     hover
     elevation="4"
     rounded="lg"
-    @click="goToStream"
+    @click="handleCardClick"
     @mouseup="handleMouseUp"
   >
     <div class="thumbnail-wrapper">
@@ -23,7 +24,19 @@
         <!-- Live badge overlay -->
         <div class="stream-overlay">
           <div class="left-badges">
+            <!-- Orphaned badge -->
             <v-chip
+              v-if="stream.isOrphaned"
+              color="warning"
+              size="small"
+              class="live-badge elevation-3"
+            >
+              <v-icon icon="mdi-alert" size="x-small" class="mr-1"></v-icon>
+              ORPHANED
+            </v-chip>
+            <!-- Live badge -->
+            <v-chip
+              v-else
               color="error"
               size="small"
               class="live-badge elevation-3"
@@ -87,31 +100,46 @@
     </v-card-title>
 
     <v-card-actions>
-      <!-- Public/Private toggle (authenticated users only) -->
-      <v-btn
-        v-if="authStore.isAuthenticated"
-        :icon="stream.isPublic ? 'mdi-earth-off' : 'mdi-earth'"
-        variant="text"
-        size="small"
-        :color="stream.isPublic ? 'grey' : 'success'"
-        :loading="togglingVisibility"
-        @click.stop="toggleVisibility"
-      >
-        <v-icon>{{ stream.isPublic ? 'mdi-earth-off' : 'mdi-earth' }}</v-icon>
-        <v-tooltip activator="parent" location="bottom">
-          {{ stream.isPublic ? 'Make Private' : 'Make Public' }}
-        </v-tooltip>
-      </v-btn>
-      <v-btn
-        color="primary"
-        variant="flat"
-        class="flex-grow-1"
-        @click="goToStream"
-        @mouseup.stop="handleMouseUp"
-      >
-        <v-icon icon="mdi-play" start></v-icon>
-        Watch Now
-      </v-btn>
+      <template v-if="stream.isOrphaned">
+        <!-- Delete orphaned stream -->
+        <v-btn
+          color="warning"
+          variant="flat"
+          class="flex-grow-1"
+          :loading="deletingOrphan"
+          @click.stop="deleteOrphan"
+        >
+          <v-icon icon="mdi-delete" start></v-icon>
+          Delete Orphaned Stream
+        </v-btn>
+      </template>
+      <template v-else>
+        <!-- Public/Private toggle (authenticated users only) -->
+        <v-btn
+          v-if="authStore.isAuthenticated"
+          :icon="stream.isPublic ? 'mdi-earth-off' : 'mdi-earth'"
+          variant="text"
+          size="small"
+          :color="stream.isPublic ? 'grey' : 'success'"
+          :loading="togglingVisibility"
+          @click.stop="toggleVisibility"
+        >
+          <v-icon>{{ stream.isPublic ? 'mdi-earth-off' : 'mdi-earth' }}</v-icon>
+          <v-tooltip activator="parent" location="bottom">
+            {{ stream.isPublic ? 'Make Private' : 'Make Public' }}
+          </v-tooltip>
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="flat"
+          class="flex-grow-1"
+          @click="goToStream"
+          @mouseup.stop="handleMouseUp"
+        >
+          <v-icon icon="mdi-play" start></v-icon>
+          Watch Now
+        </v-btn>
+      </template>
     </v-card-actions>
   </v-card>
 </template>
@@ -137,6 +165,7 @@ const thumbnailError = ref(false)
 const displayedThumbnail = ref<string>('')
 const pendingThumbnail = ref<string>('')
 const togglingVisibility = ref(false)
+const deletingOrphan = ref(false)
 
 // Check if this is a pulled stream (RtspPull, OvtPull, etc.)
 const isPulledStream = computed(() => {
@@ -225,6 +254,22 @@ async function toggleVisibility() {
   }
 }
 
+async function deleteOrphan() {
+  deletingOrphan.value = true
+  try {
+    await streamStore.deleteOrphanedStream(props.stream.name)
+  } catch (err) {
+    console.error('Failed to delete orphaned stream:', err)
+  } finally {
+    deletingOrphan.value = false
+  }
+}
+
+function handleCardClick(event?: MouseEvent) {
+  if (props.stream.isOrphaned) return
+  goToStream(event)
+}
+
 function goToStream(event?: MouseEvent) {
   // Handle Ctrl/Cmd+click to open in new tab
   if (event && (event.ctrlKey || event.metaKey)) {
@@ -250,6 +295,12 @@ function handleMouseUp(event: MouseEvent) {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+}
+
+.stream-card.orphaned-card {
+  border: 2px solid rgb(var(--v-theme-warning));
+  opacity: 0.85;
+  cursor: default;
 }
 
 .stream-card:hover {

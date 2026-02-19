@@ -16,12 +16,11 @@ app.use(pinia)
 app.use(router)
 app.use(vuetify)
 
-// Check auth status before mounting (non-blocking)
+// Check auth status before mounting so the first fetchStreams() knows the correct state
 import { useAuthStore } from './stores/auth'
 const authStore = useAuthStore(pinia)
 authStore.checkAuth().then(() => {
   console.log('Auth status:', authStore.isAuthenticated ? 'authenticated' : 'not authenticated')
+  app.mount('#app')
 })
-
-app.mount('#app')
 

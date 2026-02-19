@@ -31,6 +31,20 @@
     <!-- Stream grid -->
     <StreamGrid :streams="streams" :loading="loading" />
 
+    <!-- Orphaned public streams section -->
+    <template v-if="authStore.isAuthenticated && orphanedStreams.length > 0">
+      <v-divider class="my-6" />
+      <div class="d-flex align-center mb-4">
+        <v-icon icon="mdi-alert-circle" color="warning" class="mr-2" />
+        <h2 class="text-h5 font-weight-medium">Orphaned Public Streams</h2>
+        <v-chip color="warning" size="small" class="ml-3">{{ orphanedStreams.length }}</v-chip>
+      </div>
+      <p class="text-body-2 text-grey mb-4">
+        These streams exist in the public app but have no matching source stream. They can be safely deleted.
+      </p>
+      <StreamGrid :streams="orphanedStreams" />
+    </template>
+
     <!-- Hint for unauthenticated users -->
     <v-alert
       v-if="!authStore.isAuthenticated && streams.length === 0 && !loading"
@@ -71,6 +85,7 @@ const authStore = useAuthStore()
 
 // Show all streams if authenticated, only public if not
 const streams = computed(() => streamStore.visibleStreams)
+const orphanedStreams = computed(() => streamStore.orphanedStreams)
 const loading = computed(() => streamStore.loading)
 const error = computed({
   get: () => streamStore.error,

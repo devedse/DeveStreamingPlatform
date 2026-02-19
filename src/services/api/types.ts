@@ -58,6 +58,8 @@ export interface StreamInfo {
   sourceType?: string
   /** Whether this stream is available on the public app (visible without login) */
   isPublic?: boolean
+  /** Whether this is an orphaned public stream (exists in public app but not in main app) */
+  isOrphaned?: boolean
 }
 
 // Stream Details with variants
