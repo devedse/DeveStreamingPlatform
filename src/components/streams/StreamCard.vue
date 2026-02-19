@@ -15,7 +15,6 @@
           :key="displayedThumbnail"
           height="200"
           cover
-          @error="handleThumbnailError"
           class="stream-thumbnail"
         >
           <!-- Dark overlay for better text readability -->
@@ -160,7 +159,6 @@ const props = defineProps<Props>()
 const router = useRouter()
 const authStore = useAuthStore()
 const streamStore = useStreamStore()
-const thumbnailError = ref(false)
 const displayedThumbnail = ref<string>('')
 const pendingThumbnail = ref<string>('')
 const togglingVisibility = ref(false)
@@ -176,9 +174,6 @@ const isPulledStream = computed(() => {
 // Note: Thumbnails are always served from the main app because the public app
 // uses bypass_video (passthrough) which the Thumbnail Publisher cannot decode.
 const thumbnailUrl = computed(() => {
-  if (thumbnailError.value) {
-    return null
-  }
   if (!authStore.isAuthenticated) {
     // Unauthenticated → use public thumbnail proxy (still fetches from main app)
     return generateThumbnailUrl(props.stream.name, {
@@ -199,45 +194,32 @@ const placeholderImage = computed(() => {
   return `data:image/svg+xml,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:hsl(${hue},70%25,50%25);stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:hsl(${(hue + 60) % 360},70%25,30%25);stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='200' fill='url(%23grad)' /%3E%3C/svg%3E`
 })
 
-// Use thumbnail if available, otherwise use placeholder
-const currentThumbnailUrl = computed(() => {
-  return thumbnailUrl.value || placeholderImage.value
-})
-
-// Initialize with the first image
+// Initialize with placeholder — only switch to real thumbnail after successful preload
 if (!displayedThumbnail.value) {
-  displayedThumbnail.value = currentThumbnailUrl.value
+  displayedThumbnail.value = placeholderImage.value
 }
 
 // Watch for thumbnail URL changes and preload before updating
-watch(currentThumbnailUrl, (newUrl) => {
-  if (newUrl !== displayedThumbnail.value) {
-    pendingThumbnail.value = newUrl
-    
-    // Preload the image
-    const img = new Image()
-    img.onload = () => {
-      // Only update if this is still the pending image (prevents race conditions)
-      if (pendingThumbnail.value === newUrl) {
-        // Update displayed thumbnail only after image is loaded
-        displayedThumbnail.value = newUrl
-        pendingThumbnail.value = ''
-      }
-    }
-    img.onerror = () => {
-      // On error, still update (might be SVG data URL)
-      if (pendingThumbnail.value === newUrl) {
-        displayedThumbnail.value = newUrl
-        pendingThumbnail.value = ''
-      }
-    }
-    img.src = newUrl
-  }
-})
+watch(thumbnailUrl, (newUrl) => {
+  if (!newUrl || newUrl === displayedThumbnail.value) return
+  pendingThumbnail.value = newUrl
 
-function handleThumbnailError() {
-  thumbnailError.value = true
-}
+  const img = new Image()
+  img.onload = () => {
+    if (pendingThumbnail.value === newUrl) {
+      displayedThumbnail.value = newUrl
+      pendingThumbnail.value = ''
+    }
+  }
+  img.onerror = () => {
+    // Show placeholder on failure; next poll cycle retries automatically
+    if (pendingThumbnail.value === newUrl) {
+      displayedThumbnail.value = placeholderImage.value
+      pendingThumbnail.value = ''
+    }
+  }
+  img.src = newUrl
+}, { immediate: true })
 
 async function toggleVisibility() {
   togglingVisibility.value = true
