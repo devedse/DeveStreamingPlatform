@@ -182,11 +182,17 @@ if (!displayedThumbnail.value) {
   displayedThumbnail.value = placeholderImage.value
 }
 
-// Update displayed thumbnail when URL changes
-// v-img handles loading; transition-group provides crossfade
+// Preload thumbnail before displaying — only switch on success to avoid black blink.
+// On failure, keep the current image (placeholder or last good thumbnail).
+// The browser caches the preloaded image, so v-img won't make a second request.
 watch(thumbnailUrl, (newUrl) => {
   if (newUrl) {
-    displayedThumbnail.value = newUrl
+    const img = new Image()
+    img.onload = () => {
+      displayedThumbnail.value = newUrl
+    }
+    // On error: silently keep current displayedThumbnail; next poll cycle retries
+    img.src = newUrl
   } else {
     displayedThumbnail.value = placeholderImage.value
   }
