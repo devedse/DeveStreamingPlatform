@@ -8,7 +8,7 @@
           Live Streams
         </h1>
         <p class="text-body-1 text-grey">
-          Browse and watch live streams
+          {{ authStore.isAuthenticated ? 'Browse and manage all live streams' : 'Browse public live streams' }}
         </p>
       </div>
       
@@ -20,13 +20,29 @@
           @click="refreshStreams"
           class="mr-3"
         ></v-btn>
-        <PullStreamDialog />
-        <AddStreamDialog />
+        <!-- Admin-only controls -->
+        <template v-if="authStore.isAuthenticated">
+          <PullStreamDialog />
+          <AddStreamDialog />
+        </template>
       </div>
     </div>
 
     <!-- Stream grid -->
     <StreamGrid :streams="streams" :loading="loading" />
+
+    <!-- Hint for unauthenticated users -->
+    <v-alert
+      v-if="!authStore.isAuthenticated && streams.length === 0 && !loading"
+      type="info"
+      variant="tonal"
+      class="mt-4"
+    >
+      <template #prepend>
+        <v-icon icon="mdi-information"></v-icon>
+      </template>
+      No public streams are currently live. Login to see all streams.
+    </v-alert>
 
     <!-- Error message -->
     <v-alert
@@ -45,13 +61,16 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, computed } from 'vue'
 import { useStreamStore } from '@/stores/streams'
+import { useAuthStore } from '@/stores/auth'
 import StreamGrid from '@/components/streams/StreamGrid.vue'
 import AddStreamDialog from '@/components/streams/AddStreamDialog.vue'
 import PullStreamDialog from '@/components/streams/PullStreamDialog.vue'
 
 const streamStore = useStreamStore()
+const authStore = useAuthStore()
 
-const streams = computed(() => streamStore.liveStreams)
+// Show all streams if authenticated, only public if not
+const streams = computed(() => streamStore.visibleStreams)
 const loading = computed(() => streamStore.loading)
 const error = computed({
   get: () => streamStore.error,

@@ -3,15 +3,36 @@ set -e
 
 echo "=== Deve Streaming Platform - Starting ==="
 
-# Create .htpasswd from environment variables
-if [ -n "$BASIC_AUTH_USERNAME" ] && [ -n "$BASIC_AUTH_PASSWORD" ]; then
-    htpasswd -cb /etc/nginx/.htpasswd "$BASIC_AUTH_USERNAME" "$BASIC_AUTH_PASSWORD"
-    echo "✓ Basic auth configured for user: $BASIC_AUTH_USERNAME"
-else
-    echo "⚠ WARNING: BASIC_AUTH_USERNAME and/or BASIC_AUTH_PASSWORD not set!"
-    echo "⚠ Basic authentication will be disabled - creating dummy file"
-    touch /etc/nginx/.htpasswd
+# ============================================
+# Authentication Setup (Cookie-based)
+# ============================================
+
+if [ -z "$ADMIN_PASSWORD" ]; then
+    echo "❌ ERROR: ADMIN_PASSWORD environment variable is required!"
+    exit 1
 fi
+# Compute password hash (frontend sends SHA-256 of password, nginx compares against this)
+export ADMIN_PASSWORD_HASH=$(printf '%s' "${ADMIN_PASSWORD}" | sha256sum | cut -d' ' -f1)
+# Compute cookie hash (different from password hash for security)
+export AUTH_COOKIE_HASH=$(printf '%s' "dsp-cookie:${ADMIN_PASSWORD}" | sha256sum | cut -d' ' -f1)
+echo "✓ Cookie-based authentication configured"
+
+# ============================================
+# OME API Configuration
+# ============================================
+
+# Configure OME virtual host and app names
+if [ -z "$OME_VHOST" ]; then
+    echo "❌ ERROR: OME_VHOST environment variable is required!"
+    exit 1
+fi
+echo "✓ OME virtual host configured: ${OME_VHOST}"
+
+if [ -z "$OME_APP" ]; then
+    echo "❌ ERROR: OME_APP environment variable is required!"
+    exit 1
+fi
+echo "✓ OME app configured: ${OME_APP}"
 
 # Configure OME API proxy URL
 if [ -z "$OME_API_URL" ]; then
@@ -38,37 +59,59 @@ fi
 export OME_THUMBNAIL_PROXY_URL="${OME_THUMBNAIL_URL}"
 echo "✓ OME Thumbnail proxy configured: ${OME_THUMBNAIL_URL}"
 
-# Configure stream auth token with default fallback
+# Configure stream auth token (required)
 if [ -z "$STREAM_AUTH_TOKEN" ]; then
-    export STREAM_AUTH_TOKEN="noauth"
-    echo "⚠ WARNING: STREAM_AUTH_TOKEN not set, using default 'noauth' (no security)"
-else
-    echo "✓ Stream authentication token configured"
+    echo "❌ ERROR: STREAM_AUTH_TOKEN environment variable is required!"
+    exit 1
 fi
+echo "✓ Stream authentication token configured"
+
+# ============================================
+# Public/Private Stream Configuration
+# ============================================
+
+# Public app name (the OME application that holds public streams via OVT pull)
+if [ -z "$OME_APP_PUBLIC" ]; then
+    echo "❌ ERROR: OME_APP_PUBLIC environment variable is required!"
+    exit 1
+fi
+echo "✓ Public app configured: ${OME_APP_PUBLIC}"
+
+
+# ============================================
+# Nginx Configuration
+# ============================================
 
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
-envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN} ${AUTH_COOKIE_HASH} ${ADMIN_PASSWORD_HASH} ${OME_APP_PUBLIC}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
 mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 
-# Inject runtime environment variables into the built JavaScript
+# ============================================
+# Runtime Configuration Injection
+# ============================================
+
 echo "✓ Injecting runtime configuration..."
 
 # Create env-config.js with runtime variables
+# NOTE: STREAM_AUTH_TOKEN is NOT included here (it's a secret fetched via /api/stream-token after auth)
 cat > /usr/share/nginx/html/env-config.js << EOF
 window.ENV_CONFIG = {
-  OME_VHOST: "${OME_VHOST:-default}",
-  OME_APP: "${OME_APP:-app}",
+  OME_VHOST: "${OME_VHOST}",
+  OME_APP: "${OME_APP}",
+  OME_APP_PUBLIC: "${OME_APP_PUBLIC}",
   OME_PROVIDER_WEBRTC_URL: "${OME_PROVIDER_WEBRTC_URL}",
   OME_PROVIDER_RTMP_URL: "${OME_PROVIDER_RTMP_URL}",
   OME_PROVIDER_SRT_URL: "${OME_PROVIDER_SRT_URL}",
   OME_PUBLISHER_WEBRTC_URL: "${OME_PUBLISHER_WEBRTC_URL}",
   OME_PUBLISHER_LLHLS_URL: "${OME_PUBLISHER_LLHLS_URL}",
-  STREAM_AUTH_TOKEN: "${STREAM_AUTH_TOKEN}",
 };
 EOF
 
-# Validate required configuration
+# ============================================
+# Validation
+# ============================================
+
 if [ -z "$OME_PROVIDER_WEBRTC_URL" ] || [ -z "$OME_PROVIDER_RTMP_URL" ] || [ -z "$OME_PROVIDER_SRT_URL" ]; then
     echo "❌ ERROR: OME_PROVIDER_WEBRTC_URL, OME_PROVIDER_RTMP_URL, and OME_PROVIDER_SRT_URL are required!"
     exit 1
@@ -84,4 +127,3 @@ echo "=== Starting Nginx ==="
 
 # Execute CMD
 exec "$@"
-

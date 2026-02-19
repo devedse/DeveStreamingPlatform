@@ -10,10 +10,18 @@ import Hls from 'hls.js'
 ;(window as any).Hls = Hls
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.use(vuetify)
+
+// Check auth status before mounting (non-blocking)
+import { useAuthStore } from './stores/auth'
+const authStore = useAuthStore(pinia)
+authStore.checkAuth().then(() => {
+  console.log('Auth status:', authStore.isAuthenticated ? 'authenticated' : 'not authenticated')
+})
 
 app.mount('#app')
 

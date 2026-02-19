@@ -56,6 +56,8 @@ export interface StreamInfo {
   height?: number
   aspectRatio?: number
   sourceType?: string
+  /** Whether this stream is available on the public app (visible without login) */
+  isPublic?: boolean
 }
 
 // Stream Details with variants
@@ -192,4 +194,36 @@ export interface PullStreamRequest {
 export interface PullStreamResponse {
   statusCode: number
   message: string
+}
+
+// MultiplexChannel types
+export interface MultiplexChannelTrackMap {
+  sourceTrackName: string
+  newTrackName: string
+  bitrateConf?: number
+  framerateConf?: number
+}
+
+export interface MultiplexChannelSourceStream {
+  name: string
+  url: string
+  trackMap: MultiplexChannelTrackMap[]
+}
+
+export interface MultiplexChannelRequest {
+  outputStream: {
+    name: string
+  }
+  sourceStreams: MultiplexChannelSourceStream[]
+}
+
+export interface MultiplexChannelResponse {
+  statusCode: number
+  message: string
+}
+
+export interface MultiplexChannelListResponse {
+  statusCode: number
+  message: string
+  response: string[]
 }

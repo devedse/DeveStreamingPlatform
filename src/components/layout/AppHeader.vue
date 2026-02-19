@@ -49,24 +49,49 @@
       :icon="theme.global.current.value.dark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
       @click="toggleTheme"
     ></v-btn>
+
+    <!-- Login/Logout button -->
+    <v-btn
+      v-if="authStore.isAuthenticated"
+      icon="mdi-logout"
+      @click="handleLogout"
+    >
+      <v-icon>mdi-logout</v-icon>
+      <v-tooltip activator="parent" location="bottom">Logout</v-tooltip>
+    </v-btn>
+    <v-btn
+      v-else
+      icon="mdi-login"
+      @click="showLogin = true"
+    >
+      <v-icon>mdi-login</v-icon>
+      <v-tooltip activator="parent" location="bottom">Login</v-tooltip>
+    </v-btn>
+
+    <!-- Login Dialog -->
+    <LoginDialog v-model="showLogin" />
   </v-app-bar>
 </template>
 
 <script setup lang="ts">
 import { useTheme } from 'vuetify'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
+import { useAuthStore } from '@/stores/auth'
 import { APP_VERSION } from '@/version'
+import LoginDialog from '@/components/auth/LoginDialog.vue'
 
 const theme = useTheme()
 const router = useRouter()
 const route = useRoute()
 const streamStore = useStreamStore()
+const authStore = useAuthStore()
 
 const totalViewers = computed(() => streamStore.totalViewers)
 const appVersion = APP_VERSION
 const isMultiStreamView = computed(() => route.name === 'multi-stream')
+const showLogin = ref(false)
 
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
@@ -74,6 +99,12 @@ function toggleTheme() {
 
 function navigateToMultiStream() {
   router.push('/streams/multi')
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  // Refresh streams to show only public streams
+  await streamStore.fetchStreams()
 }
 </script>
 

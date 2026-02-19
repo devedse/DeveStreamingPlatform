@@ -1,26 +1,42 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { omeApi } from '@/services/api/omeApi'
+import { useAuthStore } from '@/stores/auth'
 import { type StreamInfo, type StreamStats } from '@/services/api/types'
 
 export const useStreamStore = defineStore('streams', () => {
+  const authStore = useAuthStore()
+
   // State
   const streams = ref<StreamInfo[]>([])
   const activeStreamName = ref<string | null>(null)
   const activeStreamStats = ref<StreamStats | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  /** Names of streams that exist in the public app */
+  const publicStreamNames = ref<Set<string>>(new Set())
 
   // Getters
-  const activeStream = computed(() => 
+  const activeStream = computed(() =>
     streams.value.find((s: StreamInfo) => s.name === activeStreamName.value)
   )
 
-  const liveStreams = computed(() => 
+  /** All live streams (for authenticated view — shows everything) */
+  const liveStreams = computed(() =>
     streams.value.filter((s: StreamInfo) => s.isLive)
   )
 
-  const totalViewers = computed(() => 
+  /** Only public live streams (for unauthenticated view) */
+  const publicLiveStreams = computed(() =>
+    streams.value.filter((s: StreamInfo) => s.isLive && s.isPublic)
+  )
+
+  /** Streams to display based on auth state */
+  const visibleStreams = computed(() =>
+    authStore.isAuthenticated ? liveStreams.value : publicLiveStreams.value
+  )
+
+  const totalViewers = computed(() =>
     streams.value.reduce((total: number, stream: StreamInfo) => total + stream.viewerCount, 0)
   )
 
@@ -29,61 +45,11 @@ export const useStreamStore = defineStore('streams', () => {
     loading.value = true
     error.value = null
     try {
-      const streamNames = await omeApi.getStreams()
-      const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
-
-      const nextStreams: StreamInfo[] = streamNames.map((name) => {
-        const existing = existingMap.get(name)
-        return {
-          name,
-          isLive: true,
-          viewerCount: existing?.viewerCount ?? 0,
-          isRecording: existing?.isRecording ?? false,
-          stats: existing?.stats,
-          width: existing?.width,
-          height: existing?.height,
-          aspectRatio: existing?.aspectRatio,
-        }
-      })
-
-      streams.value = nextStreams
-
-      const recordings = await omeApi.getRecordingState()
-
-      await Promise.all(
-        streams.value.map(async (stream) => {
-          const [statsResponse, detailsResponse] = await Promise.all([
-            omeApi.getStreamStats(stream.name),
-            omeApi.getStreamDetails(stream.name),
-          ])
-
-          if (statsResponse?.response) {
-            stream.stats = statsResponse.response
-            stream.viewerCount = calculateViewerCount(statsResponse.response)
-          }
-
-          const videoTrack = detailsResponse?.response?.input.tracks.find(
-            (track) => track.type === 'Video' && track.video
-          )
-
-          if (videoTrack?.video) {
-            const { width, height } = videoTrack.video
-            stream.width = width
-            stream.height = height
-            stream.aspectRatio = width && height ? width / height : DEFAULT_ASPECT_RATIO
-          }
-
-          // Capture source type (RtspPull, WebRTC, etc.)
-          if (detailsResponse?.response?.input.sourceType) {
-            stream.sourceType = detailsResponse.response.input.sourceType
-          }
-
-          stream.isRecording = recordings.some((recording) =>
-            recording.stream.name === stream.name &&
-            ['recording', 'ready', 'stopping'].includes(recording.state)
-          )
-        })
-      )
+      if (authStore.isAuthenticated) {
+        await fetchAllStreams()
+      } else {
+        await fetchPublicStreamsOnly()
+      }
     } catch (err) {
       error.value = 'Failed to fetch streams'
       console.error('Error fetching streams:', err)
@@ -92,13 +58,141 @@ export const useStreamStore = defineStore('streams', () => {
     }
   }
 
+  /**
+   * Fetch all streams from the main app + check which are public
+   * (for authenticated users)
+   */
+  async function fetchAllStreams() {
+    // Fetch main app streams and public app streams in parallel
+    // Use multiplexChannels to determine which streams are configured as public
+    // (this shows intent, even if the stream isn't live in app-public yet)
+    const [streamNames, publicNames] = await Promise.all([
+      omeApi.getStreams(),
+      omeApi.getMultiplexChannels(),
+    ])
+
+    publicStreamNames.value = new Set(publicNames)
+    const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
+
+    const nextStreams: StreamInfo[] = streamNames.map((name) => {
+      const existing = existingMap.get(name)
+      return {
+        name,
+        isLive: true,
+        viewerCount: existing?.viewerCount ?? 0,
+        isRecording: existing?.isRecording ?? false,
+        isPublic: publicStreamNames.value.has(name),
+        stats: existing?.stats,
+        width: existing?.width,
+        height: existing?.height,
+        aspectRatio: existing?.aspectRatio,
+      }
+    })
+
+    streams.value = nextStreams
+
+    const recordings = await omeApi.getRecordingState()
+
+    await Promise.all(
+      streams.value.map(async (stream) => {
+        const [statsResponse, detailsResponse] = await Promise.all([
+          omeApi.getStreamStats(stream.name),
+          omeApi.getStreamDetails(stream.name),
+        ])
+
+        if (statsResponse?.response) {
+          stream.stats = statsResponse.response
+          stream.viewerCount = calculateViewerCount(statsResponse.response)
+        }
+
+        const videoTrack = detailsResponse?.response?.input.tracks.find(
+          (track) => track.type === 'Video' && track.video
+        )
+
+        if (videoTrack?.video) {
+          const { width, height } = videoTrack.video
+          stream.width = width
+          stream.height = height
+          stream.aspectRatio = width && height ? width / height : DEFAULT_ASPECT_RATIO
+        }
+
+        if (detailsResponse?.response?.input.sourceType) {
+          stream.sourceType = detailsResponse.response.input.sourceType
+        }
+
+        stream.isRecording = recordings.some((recording) =>
+          recording.stream.name === stream.name &&
+          ['recording', 'ready', 'stopping'].includes(recording.state)
+        )
+      })
+    )
+  }
+
+  /**
+   * Fetch only public streams from the public app
+   * (for unauthenticated users)
+   */
+  async function fetchPublicStreamsOnly() {
+    const publicNames = await omeApi.getPublicStreams()
+    publicStreamNames.value = new Set(publicNames)
+    const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
+
+    const nextStreams: StreamInfo[] = publicNames.map((name) => {
+      const existing = existingMap.get(name)
+      return {
+        name,
+        isLive: true,
+        viewerCount: existing?.viewerCount ?? 0,
+        isPublic: true,
+        stats: existing?.stats,
+        width: existing?.width,
+        height: existing?.height,
+        aspectRatio: existing?.aspectRatio,
+      }
+    })
+
+    streams.value = nextStreams
+
+    // Fetch stats and details from public API
+    await Promise.all(
+      streams.value.map(async (stream) => {
+        const [statsResponse, detailsResponse] = await Promise.all([
+          omeApi.getPublicStreamStats(stream.name),
+          omeApi.getPublicStreamDetails(stream.name),
+        ])
+
+        if (statsResponse?.response) {
+          stream.stats = statsResponse.response
+          stream.viewerCount = calculateViewerCount(statsResponse.response)
+        }
+
+        const videoTrack = detailsResponse?.response?.input.tracks.find(
+          (track) => track.type === 'Video' && track.video
+        )
+
+        if (videoTrack?.video) {
+          const { width, height } = videoTrack.video
+          stream.width = width
+          stream.height = height
+          stream.aspectRatio = width && height ? width / height : DEFAULT_ASPECT_RATIO
+        }
+
+        if (detailsResponse?.response?.input.sourceType) {
+          stream.sourceType = detailsResponse.response.input.sourceType
+        }
+      })
+    )
+  }
+
   async function fetchStreamStats(streamName: string) {
     try {
-      const statsResponse = await omeApi.getStreamStats(streamName)
+      const statsResponse = authStore.isAuthenticated
+        ? await omeApi.getStreamStats(streamName)
+        : await omeApi.getPublicStreamStats(streamName)
+
       if (statsResponse?.response) {
         activeStreamStats.value = statsResponse.response
-        
-        // Update the stream in the list
+
         const stream = streams.value.find((s: StreamInfo) => s.name === streamName)
         if (stream) {
           stream.stats = statsResponse.response
@@ -120,6 +214,47 @@ export const useStreamStore = defineStore('streams', () => {
     activeStreamStats.value = null
   }
 
+  // Public/Private toggle actions
+
+  /**
+   * Make a stream public by creating a MultiplexChannel in the public app
+   */
+  async function makeStreamPublic(streamName: string): Promise<boolean> {
+    const success = await omeApi.makeStreamPublic(streamName)
+    if (success) {
+      publicStreamNames.value.add(streamName)
+      const stream = streams.value.find(s => s.name === streamName)
+      if (stream) {
+        stream.isPublic = true
+      }
+    }
+    return success
+  }
+
+  /**
+   * Make a stream private by removing it from the public app
+   */
+  async function makeStreamPrivate(streamName: string): Promise<boolean> {
+    const success = await omeApi.makeStreamPrivate(streamName)
+    if (success) {
+      publicStreamNames.value.delete(streamName)
+      const stream = streams.value.find(s => s.name === streamName)
+      if (stream) {
+        stream.isPublic = false
+      }
+    }
+    return success
+  }
+
+  /**
+   * Check if a specific stream exists in the public app.
+   * Uses the public API client so it works for unauthenticated users too.
+   */
+  async function isStreamPublic(streamName: string): Promise<boolean> {
+    const publicNames = await omeApi.getPublicStreams()
+    return publicNames.includes(streamName)
+  }
+
   // Helper function to calculate total viewer count from connections
   function calculateViewerCount(stats: StreamStats): number {
     return Object.values(stats.connections).reduce((sum: number, count: unknown) => sum + (count as number), 0)
@@ -128,18 +263,16 @@ export const useStreamStore = defineStore('streams', () => {
   // Default aspect ratio constant
   const DEFAULT_ASPECT_RATIO = 16 / 9
 
-  // Start polling for updates (optional, for real-time updates)
+  // Polling
   let pollInterval: number | null = null
 
   function startPolling(intervalMs = 5000) {
     if (pollInterval) return
-    
+
     pollInterval = window.setInterval(() => {
-      // Only fetch streams list on home page, not when viewing a stream
       if (!activeStreamName.value) {
         fetchStreams()
       } else {
-        // When viewing a stream, only update that stream's stats
         fetchStreamStats(activeStreamName.value)
       }
     }, intervalMs)
@@ -159,15 +292,21 @@ export const useStreamStore = defineStore('streams', () => {
     activeStreamStats,
     loading,
     error,
+    publicStreamNames,
     // Getters
     activeStream,
     liveStreams,
+    publicLiveStreams,
+    visibleStreams,
     totalViewers,
     // Actions
     fetchStreams,
     fetchStreamStats,
     setActiveStream,
     clearActiveStream,
+    makeStreamPublic,
+    makeStreamPrivate,
+    isStreamPublic,
     startPolling,
     stopPolling,
   }

@@ -28,10 +28,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Install apache2-utils for htpasswd
-RUN apk add --no-cache apache2-utils
-
-# Create entrypoint script to generate htpasswd from env vars
+# Create entrypoint script for runtime configuration
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 

@@ -73,16 +73,41 @@
     <v-card-title class="stream-title">
       <v-icon icon="mdi-video" size="small" class="mr-2" color="primary"></v-icon>
       <span class="text-truncate">{{ stream.name }}</span>
+      <!-- Public badge -->
+      <v-chip
+        v-if="stream.isPublic"
+        color="success"
+        size="x-small"
+        variant="flat"
+        class="ml-2"
+      >
+        <v-icon icon="mdi-earth" size="x-small" start></v-icon>
+        PUBLIC
+      </v-chip>
     </v-card-title>
 
     <v-card-actions>
+      <!-- Public/Private toggle (authenticated users only) -->
+      <v-btn
+        v-if="authStore.isAuthenticated"
+        :icon="stream.isPublic ? 'mdi-earth-off' : 'mdi-earth'"
+        variant="text"
+        size="small"
+        :color="stream.isPublic ? 'grey' : 'success'"
+        :loading="togglingVisibility"
+        @click.stop="toggleVisibility"
+      >
+        <v-icon>{{ stream.isPublic ? 'mdi-earth-off' : 'mdi-earth' }}</v-icon>
+        <v-tooltip activator="parent" location="bottom">
+          {{ stream.isPublic ? 'Make Private' : 'Make Public' }}
+        </v-tooltip>
+      </v-btn>
       <v-btn
         color="primary"
         variant="flat"
-        block
+        class="flex-grow-1"
         @click="goToStream"
         @mouseup.stop="handleMouseUp"
-        class="watch-button"
       >
         <v-icon icon="mdi-play" start></v-icon>
         Watch Now
@@ -96,6 +121,9 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { type StreamInfo } from '@/services/api/types'
 import { generateThumbnailUrl } from '@/services/api/endpoints'
+import { useAuthStore } from '@/stores/auth'
+import { useStreamStore } from '@/stores/streams'
+import { config } from '@/config'
 
 interface Props {
   stream: StreamInfo
@@ -103,9 +131,12 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
+const authStore = useAuthStore()
+const streamStore = useStreamStore()
 const thumbnailError = ref(false)
 const displayedThumbnail = ref<string>('')
 const pendingThumbnail = ref<string>('')
+const togglingVisibility = ref(false)
 
 // Check if this is a pulled stream (RtspPull, OvtPull, etc.)
 const isPulledStream = computed(() => {
@@ -118,7 +149,17 @@ const thumbnailUrl = computed(() => {
   if (thumbnailError.value) {
     return null
   }
-  return generateThumbnailUrl(props.stream.name)
+  if (props.stream.isPublic && !authStore.isAuthenticated) {
+    // Public stream, unauthenticated → use public thumbnail proxy
+    return generateThumbnailUrl(props.stream.name, {
+      app: config.ome.appPublic,
+      usePublicProxy: true,
+    })
+  }
+  // Authenticated → use main thumbnail proxy with auth token
+  return generateThumbnailUrl(props.stream.name, {
+    authToken: authStore.streamAuthToken,
+  })
 })
 
 // Use a simple gradient placeholder as fallback
@@ -167,6 +208,21 @@ watch(currentThumbnailUrl, (newUrl) => {
 
 function handleThumbnailError() {
   thumbnailError.value = true
+}
+
+async function toggleVisibility() {
+  togglingVisibility.value = true
+  try {
+    if (props.stream.isPublic) {
+      await streamStore.makeStreamPrivate(props.stream.name)
+    } else {
+      await streamStore.makeStreamPublic(props.stream.name)
+    }
+  } catch (err) {
+    console.error('Failed to toggle stream visibility:', err)
+  } finally {
+    togglingVisibility.value = false
+  }
 }
 
 function goToStream(event?: MouseEvent) {
