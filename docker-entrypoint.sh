@@ -84,7 +84,7 @@ echo "✓ Public app configured: ${OME_APP_PUBLIC}"
 
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
-envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN} ${AUTH_COOKIE_HASH} ${ADMIN_PASSWORD_HASH} ${OME_APP_PUBLIC}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN} ${AUTH_COOKIE_HASH} ${ADMIN_PASSWORD_HASH} ${OME_APP_PUBLIC} ${OME_VHOST} ${OME_APP}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
 mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 
 # ============================================

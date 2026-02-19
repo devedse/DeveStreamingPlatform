@@ -151,7 +151,6 @@ import { type StreamInfo } from '@/services/api/types'
 import { generateThumbnailUrl } from '@/services/api/endpoints'
 import { useAuthStore } from '@/stores/auth'
 import { useStreamStore } from '@/stores/streams'
-import { config } from '@/config'
 
 interface Props {
   stream: StreamInfo
@@ -174,14 +173,15 @@ const isPulledStream = computed(() => {
 })
 
 // Get the thumbnail URL from OME
+// Note: Thumbnails are always served from the main app because the public app
+// uses bypass_video (passthrough) which the Thumbnail Publisher cannot decode.
 const thumbnailUrl = computed(() => {
   if (thumbnailError.value) {
     return null
   }
-  if (props.stream.isPublic && !authStore.isAuthenticated) {
-    // Public stream, unauthenticated → use public thumbnail proxy
+  if (!authStore.isAuthenticated) {
+    // Unauthenticated → use public thumbnail proxy (still fetches from main app)
     return generateThumbnailUrl(props.stream.name, {
-      app: config.ome.appPublic,
       usePublicProxy: true,
     })
   }
