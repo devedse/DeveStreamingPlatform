@@ -249,6 +249,34 @@ class OmeApiClient {
                 sourceTrackName: 'bypass_audio',
                 newTrackName: 'audio',
               },
+              {
+                sourceTrackName: 'opus_audio',
+                newTrackName: 'opus_audio',
+              },
+            ],
+          },
+        ],
+        playlists: [
+          {
+            name: 'for LLHLS',
+            fileName: 'multistream_llhls',
+            renditions: [
+              {
+                name: 'Source',
+                video: 'video',
+                audio: 'audio',
+              },
+            ],
+          },
+          {
+            name: 'for WebRTC',
+            fileName: 'multistream_webrtc',
+            renditions: [
+              {
+                name: 'Source',
+                video: 'video',
+                audio: 'opus_audio',
+              },
             ],
           },
         ],

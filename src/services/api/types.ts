@@ -215,6 +215,23 @@ export interface MultiplexChannelRequest {
     name: string
   }
   sourceStreams: MultiplexChannelSourceStream[]
+  playlists?: MultiplexChannelPlaylist[]
+}
+
+export interface MultiplexChannelPlaylist {
+  name: string
+  fileName: string
+  options?: {
+    webrtcAutoAbr?: boolean
+    hlsChunklistPathDepth?: number
+  }
+  renditions: MultiplexChannelRendition[]
+}
+
+export interface MultiplexChannelRendition {
+  name: string
+  video: string
+  audio: string
 }
 
 export interface MultiplexChannelResponse {
