@@ -1,113 +1,173 @@
 <template>
   <div class="stream-view-container">
-    <!-- Compact header -->
-    <div class="stream-header">
-      <v-btn
-        variant="text"
-        size="small"
-        @click="router.push('/')"
-        class="back-btn"
-      >
+    <!-- Access denied / checking state -->
+    <div v-if="streamAccessible === null" class="d-flex align-center justify-center" style="height: calc(100vh - 64px);">
+      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+    </div>
+
+    <div v-else-if="streamAccessible === false" class="d-flex flex-column align-center justify-center" style="height: calc(100vh - 64px);">
+      <v-icon icon="mdi-lock" size="80" color="grey" class="mb-4"></v-icon>
+      <h2 class="text-h5 mb-2">Stream Not Available</h2>
+      <p class="text-body-1 text-grey mb-6">This stream is private or does not exist. Login to access all streams.</p>
+      <v-btn color="primary" variant="flat" @click="router.push('/')">
         <v-icon icon="mdi-arrow-left" start></v-icon>
-        Back
-      </v-btn>
-      <div class="stream-title">
-        <v-chip color="error" size="small" class="live-badge">
-          <v-icon icon="mdi-circle" size="x-small" class="mr-1"></v-icon>
-          LIVE
-        </v-chip>
-        <h1 class="text-h6">{{ streamName }}</h1>
-      </div>
-      <v-btn
-        variant="tonal"
-        size="small"
-        color="grey"
-        @click="openStreamDetailsDebug"
-        class="debug-btn"
-      >
-        <v-icon icon="mdi-cog" start></v-icon>
-        Advanced Stream Details
+        Back to Streams
       </v-btn>
     </div>
 
-    <!-- Main content grid -->
-    <div class="stream-content">
-      <div class="player-wrapper">
-        <v-card elevation="2" class="player-card">
-          <OvenPlayerComponent
-            :sources="playbackSources"
-            :stream-name="streamName"
-            :autoplay="true"
-            :mute="false"
-          />
-        </v-card>
+    <!-- Stream content (accessible) -->
+    <template v-else>
+      <!-- Compact header -->
+      <div class="stream-header">
+        <v-btn
+          variant="text"
+          size="small"
+          @click="router.push('/')"
+          class="back-btn"
+        >
+          <v-icon icon="mdi-arrow-left" start></v-icon>
+          Back
+        </v-btn>
+        <div class="stream-title">
+          <v-chip color="error" size="small" class="live-badge">
+            <v-icon icon="mdi-circle" size="x-small" class="mr-1"></v-icon>
+            LIVE
+          </v-chip>
+          <h1 class="text-h6">{{ streamName }}</h1>
+          <!-- Public badge -->
+          <v-chip
+            v-if="isPublicStream"
+            color="success"
+            size="small"
+            variant="flat"
+          >
+            <v-icon icon="mdi-earth" size="x-small" class="mr-1"></v-icon>
+            PUBLIC
+          </v-chip>
+        </div>
+        <v-btn
+          v-if="authStore.isAuthenticated"
+          variant="tonal"
+          size="small"
+          color="grey"
+          @click="openStreamDetailsDebug"
+          class="debug-btn"
+        >
+          <v-icon icon="mdi-cog" start></v-icon>
+          Advanced Stream Details
+        </v-btn>
+        <span v-else></span>
       </div>
 
-      <div class="stats-wrapper">
-        <StreamStats 
-          :stream-name="streamName"
-          :stats="stats" 
-          :loading="statsLoading"
-        />
-        
-        <div class="mt-4">
-          <RecordingControls :stream-name="streamName" />
-        </div>
-        
-        <!-- Stop pulling stream button -->
-        <div v-if="isPulledStream" class="mt-4">
-          <v-card elevation="2">
-            <v-card-title class="text-subtitle-1">
-              <v-icon icon="mdi-download-network" start color="secondary"></v-icon>
-              Pulled Stream
-            </v-card-title>
-            <v-card-text>
-              <p class="text-body-2 mb-3">
-                This stream is being pulled from an external source.
-              </p>
-              <v-btn
-                color="error"
-                variant="flat"
-                block
-                @click="showStopDialog = true"
-                :loading="deletingStream"
-              >
-                <v-icon icon="mdi-stop-circle" start></v-icon>
-                Stop Pulling Stream
-              </v-btn>
-            </v-card-text>
+      <!-- Main content grid -->
+      <div class="stream-content">
+        <div class="player-wrapper">
+          <v-card elevation="2" class="player-card">
+            <OvenPlayerComponent
+              :sources="playbackSources"
+              :stream-name="streamName"
+              :autoplay="true"
+              :mute="false"
+            />
           </v-card>
         </div>
+
+        <div class="stats-wrapper">
+          <StreamStats 
+            :stream-name="streamName"
+            :stats="stats" 
+            :loading="statsLoading"
+          />
+          
+          <!-- Admin-only controls -->
+          <template v-if="authStore.isAuthenticated">
+            <!-- Public/Private visibility toggle -->
+            <div class="mt-4">
+              <v-card elevation="2">
+                <v-card-title class="text-subtitle-1">
+                  <v-icon :icon="currentStream?.isPublic ? 'mdi-earth' : 'mdi-earth-off'" start :color="currentStream?.isPublic ? 'success' : 'grey'"></v-icon>
+                  Stream Visibility
+                </v-card-title>
+                <v-card-text>
+                  <p class="text-body-2 mb-3">
+                    {{ currentStream?.isPublic ? 'This stream is visible to everyone without login.' : 'This stream is private and requires login to view.' }}
+                  </p>
+                  <v-btn
+                    :color="currentStream?.isPublic ? 'grey' : 'success'"
+                    variant="flat"
+                    block
+                    :loading="togglingVisibility"
+                    @click="toggleVisibility"
+                  >
+                    <v-icon :icon="currentStream?.isPublic ? 'mdi-earth-off' : 'mdi-earth'" start></v-icon>
+                    {{ currentStream?.isPublic ? 'Make Private' : 'Make Public' }}
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </div>
+
+            <div class="mt-4">
+              <RecordingControls :stream-name="streamName" />
+            </div>
+            
+            <!-- Stop pulling stream button -->
+            <div v-if="isPulledStream" class="mt-4">
+              <v-card elevation="2">
+                <v-card-title class="text-subtitle-1">
+                  <v-icon icon="mdi-download-network" start color="secondary"></v-icon>
+                  Pulled Stream
+                </v-card-title>
+                <v-card-text>
+                  <p class="text-body-2 mb-3">
+                    This stream is being pulled from an external source.
+                  </p>
+                  <v-btn
+                    color="error"
+                    variant="flat"
+                    block
+                    @click="showStopDialog = true"
+                    :loading="deletingStream"
+                  >
+                    <v-icon icon="mdi-stop-circle" start></v-icon>
+                    Stop Pulling Stream
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </div>
+          </template>
+        </div>
       </div>
-    </div>
-    
-    <!-- Confirmation dialog -->
-    <v-dialog v-model="showStopDialog" max-width="450">
-      <v-card>
-        <v-card-title class="text-h6">
-          <v-icon icon="mdi-alert" color="error" class="mr-2"></v-icon>
-          Stop Pulling Stream?
-        </v-card-title>
-        <v-card-text>
-          <p>Are you sure you want to stop pulling <strong>{{ streamName }}</strong>?</p>
-          <p class="text-body-2 text-grey mt-2">This will terminate the stream and disconnect all viewers.</p>
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="showStopDialog = false" :disabled="deletingStream">Cancel</v-btn>
-          <v-btn color="error" variant="flat" @click="stopPulling" :loading="deletingStream">
-            Stop Stream
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+      
+      <!-- Confirmation dialog -->
+      <v-dialog v-model="showStopDialog" max-width="450">
+        <v-card>
+          <v-card-title class="text-h6">
+            <v-icon icon="mdi-alert" color="error" class="mr-2"></v-icon>
+            Stop Pulling Stream?
+          </v-card-title>
+          <v-card-text>
+            <p>Are you sure you want to stop pulling <strong>{{ streamName }}</strong>?</p>
+            <p class="text-body-2 text-grey mt-2">This will terminate the stream and disconnect all viewers.</p>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn variant="text" @click="showStopDialog = false" :disabled="deletingStream">Cancel</v-btn>
+            <v-btn color="error" variant="flat" @click="stopPulling" :loading="deletingStream">
+              Stop Stream
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
+import { useAuthStore } from '@/stores/auth'
+import { config } from '@/config'
 import { generatePlaybackSources, generateStreamDetailsUrl } from '@/services/api/endpoints'
 import { omeApi } from '@/services/api/omeApi'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
@@ -117,14 +177,35 @@ import RecordingControls from '@/components/streams/RecordingControls.vue'
 const route = useRoute()
 const router = useRouter()
 const streamStore = useStreamStore()
+const authStore = useAuthStore()
 
 const streamName = computed(() => route.params.name as string)
-const playbackSources = computed(() => generatePlaybackSources(streamName.value))
 const stats = computed(() => streamStore.activeStreamStats)
 const statsLoading = computed(() => streamStore.loading)
 
 const showStopDialog = ref(false)
 const deletingStream = ref(false)
+const togglingVisibility = ref(false)
+const streamAccessible = ref<boolean | null>(null) // null = checking, true = accessible, false = not
+const isPublicStream = ref(false)
+
+const currentStream = computed(() =>
+  streamStore.streams.find(s => s.name === streamName.value)
+)
+
+// Generate playback sources based on auth state and stream visibility
+const playbackSources = computed(() => {
+  if (isPublicStream.value && !authStore.isAuthenticated) {
+    // Public stream, unauthenticated user → use public app, no auth token
+    return generatePlaybackSources(streamName.value, {
+      app: config.ome.appPublic,
+    })
+  }
+  // Authenticated user → use main app with auth token
+  return generatePlaybackSources(streamName.value, {
+    authToken: authStore.streamAuthToken,
+  })
+})
 
 // Check if this is a pulled stream
 const isPulledStream = computed(() => {
@@ -144,7 +225,6 @@ async function stopPulling() {
     const success = await omeApi.deleteStream(streamName.value)
     if (success) {
       showStopDialog.value = false
-      // Navigate back to home after stopping
       router.push('/')
     } else {
       alert('Failed to stop pulling stream. Please try again.')
@@ -157,16 +237,59 @@ async function stopPulling() {
   }
 }
 
-onMounted(async () => {
-  // Set active stream and fetch initial stats
-  streamStore.setActiveStream(streamName.value)
-  
-  // Start polling for stats updates
-  streamStore.startPolling(3000)
+async function toggleVisibility() {
+  togglingVisibility.value = true
+  try {
+    if (currentStream.value?.isPublic) {
+      await streamStore.makeStreamPrivate(streamName.value)
+    } else {
+      await streamStore.makeStreamPublic(streamName.value)
+    }
+  } catch (err) {
+    console.error('Failed to toggle stream visibility:', err)
+  } finally {
+    togglingVisibility.value = false
+  }
+}
+
+async function checkStreamAccess() {
+  if (authStore.isAuthenticated) {
+    // Authenticated users can access all streams
+    streamAccessible.value = true
+    isPublicStream.value = false
+    return
+  }
+
+  // Check if this stream is available in the public app
+  const isPublic = await streamStore.isStreamPublic(streamName.value)
+  isPublicStream.value = isPublic
+  streamAccessible.value = isPublic
+}
+
+async function initStream() {
+  streamAccessible.value = null
+  isPublicStream.value = false
+  streamStore.clearActiveStream()
+  streamStore.stopPolling()
+
+  await checkStreamAccess()
+
+  if (streamAccessible.value) {
+    streamStore.setActiveStream(streamName.value)
+    streamStore.startPolling(3000)
+  }
+}
+
+// Re-initialize when navigating between streams (route reuse)
+watch(streamName, () => {
+  initStream()
+})
+
+onMounted(() => {
+  initStream()
 })
 
 onBeforeUnmount(() => {
-  // Clear active stream and stop polling
   streamStore.clearActiveStream()
   streamStore.stopPolling()
 })

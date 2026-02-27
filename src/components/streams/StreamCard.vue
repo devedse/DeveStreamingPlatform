@@ -1,10 +1,11 @@
 <template>
   <v-card
     class="stream-card"
+    :class="{ 'orphaned-card': stream.isOrphaned }"
     hover
     elevation="4"
     rounded="lg"
-    @click="goToStream"
+    @click="handleCardClick"
     @mouseup="handleMouseUp"
   >
     <div class="thumbnail-wrapper">
@@ -14,7 +15,6 @@
           :key="displayedThumbnail"
           height="200"
           cover
-          @error="handleThumbnailError"
           class="stream-thumbnail"
         >
           <!-- Dark overlay for better text readability -->
@@ -23,7 +23,19 @@
         <!-- Live badge overlay -->
         <div class="stream-overlay">
           <div class="left-badges">
+            <!-- Orphaned badge -->
             <v-chip
+              v-if="stream.isOrphaned"
+              color="warning"
+              size="small"
+              class="live-badge elevation-3"
+            >
+              <v-icon icon="mdi-alert" size="x-small" class="mr-1"></v-icon>
+              ORPHANED
+            </v-chip>
+            <!-- Live badge -->
+            <v-chip
+              v-else
               color="error"
               size="small"
               class="live-badge elevation-3"
@@ -73,20 +85,45 @@
     <v-card-title class="stream-title">
       <v-icon icon="mdi-video" size="small" class="mr-2" color="primary"></v-icon>
       <span class="text-truncate">{{ stream.name }}</span>
+      <!-- Public badge -->
+      <v-chip
+        v-if="stream.isPublic"
+        color="success"
+        size="x-small"
+        variant="flat"
+        class="ml-2"
+      >
+        <v-icon icon="mdi-earth" size="x-small" start></v-icon>
+        PUBLIC
+      </v-chip>
     </v-card-title>
 
     <v-card-actions>
-      <v-btn
-        color="primary"
-        variant="flat"
-        block
-        @click="goToStream"
-        @mouseup.stop="handleMouseUp"
-        class="watch-button"
-      >
-        <v-icon icon="mdi-play" start></v-icon>
-        Watch Now
-      </v-btn>
+      <template v-if="stream.isOrphaned">
+        <!-- Delete orphaned stream -->
+        <v-btn
+          color="warning"
+          variant="flat"
+          class="flex-grow-1"
+          :loading="deletingOrphan"
+          @click.stop="deleteOrphan"
+        >
+          <v-icon icon="mdi-delete" start></v-icon>
+          Delete Orphaned Stream
+        </v-btn>
+      </template>
+      <template v-else>
+        <v-btn
+          color="primary"
+          variant="flat"
+          class="flex-grow-1"
+          @click="goToStream"
+          @mouseup.stop="handleMouseUp"
+        >
+          <v-icon icon="mdi-play" start></v-icon>
+          Watch Now
+        </v-btn>
+      </template>
     </v-card-actions>
   </v-card>
 </template>
@@ -96,6 +133,8 @@ import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { type StreamInfo } from '@/services/api/types'
 import { generateThumbnailUrl } from '@/services/api/endpoints'
+import { useAuthStore } from '@/stores/auth'
+import { useStreamStore } from '@/stores/streams'
 
 interface Props {
   stream: StreamInfo
@@ -103,9 +142,10 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
-const thumbnailError = ref(false)
+const authStore = useAuthStore()
+const streamStore = useStreamStore()
 const displayedThumbnail = ref<string>('')
-const pendingThumbnail = ref<string>('')
+const deletingOrphan = ref(false)
 
 // Check if this is a pulled stream (RtspPull, OvtPull, etc.)
 const isPulledStream = computed(() => {
@@ -114,11 +154,22 @@ const isPulledStream = computed(() => {
 })
 
 // Get the thumbnail URL from OME
+// Note: Thumbnails are always served from the main app because the public app
+// uses bypass_video (passthrough) which the Thumbnail Publisher cannot decode.
 const thumbnailUrl = computed(() => {
-  if (thumbnailError.value) {
-    return null
+  // Orphaned streams have no source — no thumbnail to fetch
+  if (props.stream.isOrphaned) return null
+
+  if (!authStore.isAuthenticated) {
+    // Unauthenticated → use public thumbnail proxy (still fetches from main app)
+    return generateThumbnailUrl(props.stream.name, {
+      usePublicProxy: true,
+    })
   }
-  return generateThumbnailUrl(props.stream.name)
+  // Authenticated → use main thumbnail proxy with auth token
+  return generateThumbnailUrl(props.stream.name, {
+    authToken: authStore.streamAuthToken,
+  })
 })
 
 // Use a simple gradient placeholder as fallback
@@ -129,44 +180,41 @@ const placeholderImage = computed(() => {
   return `data:image/svg+xml,%3Csvg width='400' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:hsl(${hue},70%25,50%25);stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:hsl(${(hue + 60) % 360},70%25,30%25);stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='200' fill='url(%23grad)' /%3E%3C/svg%3E`
 })
 
-// Use thumbnail if available, otherwise use placeholder
-const currentThumbnailUrl = computed(() => {
-  return thumbnailUrl.value || placeholderImage.value
-})
-
-// Initialize with the first image
+// Initialize with placeholder — only switch to real thumbnail after successful preload
 if (!displayedThumbnail.value) {
-  displayedThumbnail.value = currentThumbnailUrl.value
+  displayedThumbnail.value = placeholderImage.value
 }
 
-// Watch for thumbnail URL changes and preload before updating
-watch(currentThumbnailUrl, (newUrl) => {
-  if (newUrl !== displayedThumbnail.value) {
-    pendingThumbnail.value = newUrl
-    
-    // Preload the image
+// Preload thumbnail before displaying — only switch on success to avoid black blink.
+// On failure, keep the current image (placeholder or last good thumbnail).
+// The browser caches the preloaded image, so v-img won't make a second request.
+watch(thumbnailUrl, (newUrl) => {
+  if (newUrl) {
     const img = new Image()
     img.onload = () => {
-      // Only update if this is still the pending image (prevents race conditions)
-      if (pendingThumbnail.value === newUrl) {
-        // Update displayed thumbnail only after image is loaded
-        displayedThumbnail.value = newUrl
-        pendingThumbnail.value = ''
-      }
+      displayedThumbnail.value = newUrl
     }
-    img.onerror = () => {
-      // On error, still update (might be SVG data URL)
-      if (pendingThumbnail.value === newUrl) {
-        displayedThumbnail.value = newUrl
-        pendingThumbnail.value = ''
-      }
-    }
+    // On error: silently keep current displayedThumbnail; next poll cycle retries
     img.src = newUrl
+  } else {
+    displayedThumbnail.value = placeholderImage.value
   }
-})
+}, { immediate: true })
 
-function handleThumbnailError() {
-  thumbnailError.value = true
+async function deleteOrphan() {
+  deletingOrphan.value = true
+  try {
+    await streamStore.deleteOrphanedStream(props.stream.name)
+  } catch (err) {
+    console.error('Failed to delete orphaned stream:', err)
+  } finally {
+    deletingOrphan.value = false
+  }
+}
+
+function handleCardClick(event?: MouseEvent) {
+  if (props.stream.isOrphaned) return
+  goToStream(event)
 }
 
 function goToStream(event?: MouseEvent) {
@@ -194,6 +242,12 @@ function handleMouseUp(event: MouseEvent) {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+}
+
+.stream-card.orphaned-card {
+  border: 2px solid rgb(var(--v-theme-warning));
+  opacity: 0.85;
+  cursor: default;
 }
 
 .stream-card:hover {

@@ -223,6 +223,8 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
+import { useAuthStore } from '@/stores/auth'
+import { config } from '@/config'
 import { generatePlaybackSources } from '@/services/api/endpoints'
 import { useOptimalLayout } from '@/composables/useOptimalLayout'
 import OvenPlayerComponent from '@/components/player/OvenPlayerComponent.vue'
@@ -233,6 +235,7 @@ type SelectionMode = 'all' | 'all-except' | 'custom'
 const router = useRouter()
 const route = useRoute()
 const streamStore = useStreamStore()
+const authStore = useAuthStore()
 
 const showSelector = ref(false)
 const showControls = ref(true)
@@ -244,7 +247,7 @@ const customNames = ref<string[]>([])
 const tempSelectionMode = ref<SelectionMode>('all')
 const tempSelectedNames = ref<string[]>([])
 
-const availableStreams = computed(() => streamStore.liveStreams)
+const availableStreams = computed(() => streamStore.visibleStreams)
 
 const selectedStreams = computed<StreamInfo[]>(() => {
   const streams = availableStreams.value
@@ -262,10 +265,23 @@ const selectedStreams = computed<StreamInfo[]>(() => {
 const { gridTemplateColumns, gridTemplateRows, streamStyles } = useOptimalLayout(selectedStreams)
 
 const sourcesCache = new Map<string, ReturnType<typeof generatePlaybackSources>>()
+let sourcesCacheAuthKey: string | null = null
 
 function getCachedSources(streamName: string) {
+  // Invalidate entire cache when auth state changes (login/logout changes app & token)
+  const currentAuthKey = `${authStore.isAuthenticated}:${authStore.streamAuthToken}`
+  if (sourcesCacheAuthKey !== currentAuthKey) {
+    sourcesCache.clear()
+    sourcesCacheAuthKey = currentAuthKey
+  }
+
   if (!sourcesCache.has(streamName)) {
-    sourcesCache.set(streamName, generatePlaybackSources(streamName))
+    const stream = streamStore.streams.find(s => s.name === streamName)
+    const isPublic = stream?.isPublic && !authStore.isAuthenticated
+    sourcesCache.set(streamName, generatePlaybackSources(streamName, {
+      app: isPublic ? config.ome.appPublic : undefined,
+      authToken: isPublic ? null : authStore.streamAuthToken,
+    }))
   }
   return sourcesCache.get(streamName)!
 }

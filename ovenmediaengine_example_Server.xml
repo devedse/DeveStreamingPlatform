@@ -544,6 +544,72 @@
                         </FILE>
                     </Publishers>
                 </Application>
+                <Application>
+                    <Name>public</Name>
+                    <!-- Application type (live/vod) -->
+                    <Type>live</Type>
+                    <OutputProfiles>
+                        <!-- Enable this configuration if you want to hardware acceleration using GPU -->
+                        <HWAccels>
+                            <Decoder>
+                                <Enable>false</Enable>
+                            </Decoder>
+                            <Encoder>
+                                <Enable>false</Enable>
+                                <!-- <Modules>qsv</Modules> -->
+                            </Encoder>
+                        </HWAccels>
+                        <!-- Common setting for decoders. Decodes is optional. -->
+                        <Decodes>
+                            <!-- 
+                            By default, OME decodes all video frames. 
+                            With OnlyKeyframes, only keyframes are decoded,
+                            massively improving performance.
+                            Thumbnails are generated only on keyframes,
+                            they may not generate at your requested fps!
+                            -->
+                            <!-- <OnlyKeyframes>true</OnlyKeyframes> -->
+                            <!-- Devedse: If I enable this and I have transcodes, the transcodes only store 1 fps too -->
+                        </Decodes>
+                        <OutputProfile>
+                            <Name>default</Name>
+                            <OutputStreamName>${OriginStreamName}</OutputStreamName>
+                            <!--LLHLS URL : https://domain/public/stream/multistream_llhls.m3u8 --> 
+                            <!--WebRTC URL: wss://domain:3334/public/stream/multistream_webrtc -->
+                        
+
+                        </OutputProfile>
+                       
+                    </OutputProfiles>
+                    <Providers>
+                        <OVT />
+                        <Multiplex />
+                    </Providers>
+                    <Publishers>
+                        <AppWorkerCount>1</AppWorkerCount>
+                        <StreamWorkerCount>8</StreamWorkerCount>
+                        <OVT />
+                        <WebRTC>
+                            <Timeout>30000</Timeout>
+                            <Rtx>false</Rtx>
+                            <Ulpfec>false</Ulpfec>
+                            <JitterBuffer>false</JitterBuffer>
+                        </WebRTC>
+                        <LLHLS>
+                            <ChunkDuration>0.2</ChunkDuration>
+                            <SegmentDuration>6</SegmentDuration>
+                            <SegmentCount>10</SegmentCount>
+                            <!-- <CrossDomains>
+                                <Url>*</Url>
+                            </CrossDomains> -->
+                        </LLHLS>
+                        <Thumbnail>
+                            <!-- <CrossDomains>
+                                <Url>*</Url>
+                            </CrossDomains> -->
+                        </Thumbnail>
+                    </Publishers>
+                </Application>
             </Applications>
         </VirtualHost>
     </VirtualHosts>
