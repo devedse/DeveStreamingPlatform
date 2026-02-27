@@ -160,7 +160,27 @@ Admins can also create a **secret share link** for any stream. This creates a Mu
 
 > **Important:** `OME_APP_UNLISTED` must be a **different** OME application than `OME_APP_PUBLIC`. If both point to the same app, unlisted streams will appear as public streams.
 
-Both the public and unlisted apps need OVT and Multiplex providers enabled in your OME `Server.xml`. See `ovenmediaengine_example_Server.xml` for a working example.
+Both the public and unlisted apps need OVT and Multiplex providers enabled in your OME `Server.xml`. **Each app must use a separate `<MuxFilesDir>`** to prevent OME's Multiplex provider from broadcasting channels across apps:
+
+```xml
+<!-- In the public app -->
+<Multiplex>
+    <MuxFilesDir>mux_files/public</MuxFilesDir>
+</Multiplex>
+
+<!-- In the unlisted app -->
+<Multiplex>
+    <MuxFilesDir>mux_files/unlisted</MuxFilesDir>
+</Multiplex>
+```
+
+You must also create these directories inside your OME `origin_conf` folder:
+
+```bash
+mkdir -p origin_conf/mux_files/public origin_conf/mux_files/unlisted
+```
+
+See `ovenmediaengine_example_Server.xml` for a complete working example.
 
 ### AdmissionWebhooks (Stream Security)
 

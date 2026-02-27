@@ -583,7 +583,9 @@
                     </OutputProfiles>
                     <Providers>
                         <OVT />
-                        <Multiplex />
+                        <Multiplex>
+                            <MuxFilesDir>mux_files/public</MuxFilesDir>
+                        </Multiplex>
                     </Providers>
                     <Publishers>
                         <AppWorkerCount>1</AppWorkerCount>
@@ -634,7 +636,9 @@
                     </OutputProfiles>
                     <Providers>
                         <OVT />
-                        <Multiplex />
+                        <Multiplex>
+                            <MuxFilesDir>mux_files/unlisted</MuxFilesDir>
+                        </Multiplex>
                     </Providers>
                     <Publishers>
                         <AppWorkerCount>1</AppWorkerCount>
