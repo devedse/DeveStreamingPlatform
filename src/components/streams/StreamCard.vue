@@ -157,6 +157,9 @@ const isPulledStream = computed(() => {
 // Note: Thumbnails are always served from the main app because the public app
 // uses bypass_video (passthrough) which the Thumbnail Publisher cannot decode.
 const thumbnailUrl = computed(() => {
+  // Orphaned streams have no source — no thumbnail to fetch
+  if (props.stream.isOrphaned) return null
+
   if (!authStore.isAuthenticated) {
     // Unauthenticated → use public thumbnail proxy (still fetches from main app)
     return generateThumbnailUrl(props.stream.name, {
