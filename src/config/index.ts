@@ -22,6 +22,15 @@ const getEnv = (runtimeKey: keyof NonNullable<Window['ENV_CONFIG']>, buildKey: s
   return window.ENV_CONFIG?.[runtimeKey] || import.meta.env[buildKey] || ''
 }
 
+// Helper that throws if a required config value is missing
+const requireEnv = (runtimeKey: keyof NonNullable<Window['ENV_CONFIG']>, buildKey: string): string => {
+  const value = getEnv(runtimeKey, buildKey)
+  if (!value) {
+    throw new Error(`Required config "${runtimeKey}" (env: ${buildKey}) is not set. Check env-config.js or .env.development.`)
+  }
+  return value
+}
+
 // Warn if ENV_CONFIG is not loaded (race condition detection)
 if (typeof window !== 'undefined' && !window.ENV_CONFIG) {
   console.warn('⚠️ ENV_CONFIG not loaded yet! This may cause empty URLs. env-config.js should load before main.ts')
@@ -40,10 +49,10 @@ export const config = {
     publicThumbnailUrl: '/public-thumbnails',
   },
   ome: {
-    vhost: getEnv('OME_VHOST', 'VITE_OME_VHOST'),
-    app: getEnv('OME_APP', 'VITE_OME_APP'),
+    vhost: requireEnv('OME_VHOST', 'VITE_OME_VHOST'),
+    app: requireEnv('OME_APP', 'VITE_OME_APP'),
     // Public app for streams visible to unauthenticated users
-    appPublic: getEnv('OME_APP_PUBLIC', 'VITE_OME_APP_PUBLIC'),
+    appPublic: requireEnv('OME_APP_PUBLIC', 'VITE_OME_APP_PUBLIC'),
     // Provider URLs (for stream ingestion)
     providers: {
       webrtcUrl: getEnv('OME_PROVIDER_WEBRTC_URL', 'VITE_PROVIDER_WEBRTC_URL'),

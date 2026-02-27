@@ -114,8 +114,9 @@ export const useStreamStore = defineStore('streams', () => {
 
     const recordings = await omeApi.getRecordingState()
 
+    // Only fetch stats/details for non-orphaned streams (orphaned ones don't exist in the main app)
     await Promise.all(
-      streams.value.map(async (stream) => {
+      streams.value.filter(stream => !stream.isOrphaned).map(async (stream) => {
         const [statsResponse, detailsResponse] = await Promise.all([
           omeApi.getStreamStats(stream.name),
           omeApi.getStreamDetails(stream.name),

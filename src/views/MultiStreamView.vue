@@ -265,8 +265,16 @@ const selectedStreams = computed<StreamInfo[]>(() => {
 const { gridTemplateColumns, gridTemplateRows, streamStyles } = useOptimalLayout(selectedStreams)
 
 const sourcesCache = new Map<string, ReturnType<typeof generatePlaybackSources>>()
+let sourcesCacheAuthKey: string | null = null
 
 function getCachedSources(streamName: string) {
+  // Invalidate entire cache when auth state changes (login/logout changes app & token)
+  const currentAuthKey = `${authStore.isAuthenticated}:${authStore.streamAuthToken}`
+  if (sourcesCacheAuthKey !== currentAuthKey) {
+    sourcesCache.clear()
+    sourcesCacheAuthKey = currentAuthKey
+  }
+
   if (!sourcesCache.has(streamName)) {
     const stream = streamStore.streams.find(s => s.name === streamName)
     const isPublic = stream?.isPublic && !authStore.isAuthenticated

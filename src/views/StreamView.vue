@@ -163,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStreamStore } from '@/stores/streams'
 import { useAuthStore } from '@/stores/auth'
@@ -266,13 +266,27 @@ async function checkStreamAccess() {
   streamAccessible.value = isPublic
 }
 
-onMounted(async () => {
+async function initStream() {
+  streamAccessible.value = null
+  isPublicStream.value = false
+  streamStore.clearActiveStream()
+  streamStore.stopPolling()
+
   await checkStreamAccess()
 
   if (streamAccessible.value) {
     streamStore.setActiveStream(streamName.value)
     streamStore.startPolling(3000)
   }
+}
+
+// Re-initialize when navigating between streams (route reuse)
+watch(streamName, () => {
+  initStream()
+})
+
+onMounted(() => {
+  initStream()
 })
 
 onBeforeUnmount(() => {
