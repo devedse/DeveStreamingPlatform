@@ -77,6 +77,7 @@
             :stream-name="streamName"
             :stats="stats" 
             :loading="statsLoading"
+            @refresh="() => streamStore.fetchStreamStats(streamName)"
           />
           
           <!-- Admin-only controls -->

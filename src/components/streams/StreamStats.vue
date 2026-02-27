@@ -124,7 +124,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useStreamStore } from '@/stores/streams'
 import { type StreamStats } from '@/services/api/types'
 import { formatBytes, formatBitsPerSec } from '@/utils/formatters'
 
@@ -138,10 +137,12 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
 })
 
-const streamStore = useStreamStore()
+const emit = defineEmits<{
+  refresh: []
+}>()
 
 async function handleRefresh() {
-  await streamStore.fetchStreamStats(props.streamName)
+  emit('refresh')
 }
 
 const totalViewers = computed(() => {

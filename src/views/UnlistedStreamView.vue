@@ -65,6 +65,7 @@
             :stream-name="channelName"
             :stats="stats"
             :loading="statsLoading"
+            @refresh="fetchStats"
           />
         </div>
       </div>

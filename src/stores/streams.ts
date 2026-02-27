@@ -11,7 +11,6 @@ export const useStreamStore = defineStore('streams', () => {
   // State
   const streams = ref<StreamInfo[]>([])
   const activeStreamName = ref<string | null>(null)
-  const activeStreamStats = ref<StreamStats | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   /** Names of streams that exist in the public app */
@@ -23,6 +22,9 @@ export const useStreamStore = defineStore('streams', () => {
   const activeStream = computed(() =>
     streams.value.find((s: StreamInfo) => s.name === activeStreamName.value)
   )
+
+  /** Stats for the active stream (derived from stream data, no separate state) */
+  const activeStreamStats = computed(() => activeStream.value?.stats ?? null)
 
   /** All live streams (for authenticated view — shows everything) */
   const liveStreams = computed(() =>
@@ -227,6 +229,7 @@ export const useStreamStore = defineStore('streams', () => {
     )
   }
 
+  /** Manual refresh of stats for a specific stream (used by StreamStats refresh button) */
   async function fetchStreamStats(streamName: string) {
     try {
       const statsResponse = authStore.isAuthenticated
@@ -234,8 +237,6 @@ export const useStreamStore = defineStore('streams', () => {
         : await omeApi.getPublicStreamStats(streamName)
 
       if (statsResponse?.response) {
-        activeStreamStats.value = statsResponse.response
-
         const stream = streams.value.find((s: StreamInfo) => s.name === streamName)
         if (stream) {
           stream.stats = statsResponse.response
@@ -249,12 +250,10 @@ export const useStreamStore = defineStore('streams', () => {
 
   function setActiveStream(streamName: string) {
     activeStreamName.value = streamName
-    fetchStreamStats(streamName)
   }
 
   function clearActiveStream() {
     activeStreamName.value = null
-    activeStreamStats.value = null
   }
 
   // Public/Private toggle actions
@@ -381,9 +380,6 @@ export const useStreamStore = defineStore('streams', () => {
 
   function pollTick() {
     fetchStreams()
-    if (activeStreamName.value) {
-      fetchStreamStats(activeStreamName.value)
-    }
   }
 
   async function startPolling(intervalMs = 5000) {
