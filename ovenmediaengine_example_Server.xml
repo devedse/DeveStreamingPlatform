@@ -610,6 +610,51 @@
                         </Thumbnail>
                     </Publishers>
                 </Application>
+                <Application>
+                    <Name>unlisted</Name>
+                    <!-- Unlisted streams: accessible via secret share link, not listed publicly -->
+                    <Type>live</Type>
+                    <OutputProfiles>
+                        <HWAccels>
+                            <Decoder>
+                                <Enable>false</Enable>
+                            </Decoder>
+                            <Encoder>
+                                <Enable>false</Enable>
+                            </Encoder>
+                        </HWAccels>
+                        <Decodes>
+                        </Decodes>
+                        <OutputProfile>
+                            <Name>default</Name>
+                            <OutputStreamName>${OriginStreamName}</OutputStreamName>
+                            <!--LLHLS URL : https://domain/unlisted/stream/multistream_llhls.m3u8 --> 
+                            <!--WebRTC URL: wss://domain:3334/unlisted/stream/multistream_webrtc -->
+                        </OutputProfile>
+                    </OutputProfiles>
+                    <Providers>
+                        <OVT />
+                        <Multiplex />
+                    </Providers>
+                    <Publishers>
+                        <AppWorkerCount>1</AppWorkerCount>
+                        <StreamWorkerCount>8</StreamWorkerCount>
+                        <OVT />
+                        <WebRTC>
+                            <Timeout>30000</Timeout>
+                            <Rtx>false</Rtx>
+                            <Ulpfec>false</Ulpfec>
+                            <JitterBuffer>false</JitterBuffer>
+                        </WebRTC>
+                        <LLHLS>
+                            <ChunkDuration>0.2</ChunkDuration>
+                            <SegmentDuration>6</SegmentDuration>
+                            <SegmentCount>10</SegmentCount>
+                        </LLHLS>
+                        <Thumbnail>
+                        </Thumbnail>
+                    </Publishers>
+                </Application>
             </Applications>
         </VirtualHost>
     </VirtualHosts>

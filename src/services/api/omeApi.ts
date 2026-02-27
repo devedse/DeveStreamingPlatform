@@ -47,10 +47,13 @@ class OmeApiClient {
   private client: AxiosInstance
   /** Public client — uses /public-api (no auth, read-only GET) */
   private publicClient: AxiosInstance
+  /** Unlisted client — uses /unlisted-api (no auth, specific-stream only) */
+  private unlistedClient: AxiosInstance
 
   constructor() {
     this.client = createApiClient(config.api.baseUrl)
     this.publicClient = createApiClient(config.api.publicBaseUrl)
+    this.unlistedClient = createApiClient(config.api.unlistedBaseUrl)
   }
 
   // ============================================
@@ -303,6 +306,155 @@ class OmeApiClient {
       return response.status === 200 || response.status === 204
     } catch (error) {
       console.error(`Failed to make stream private: ${streamName}`, error)
+      return false
+    }
+  }
+
+  // ============================================
+  // Unlisted App Methods
+  // ============================================
+
+  /**
+   * List all unlisted MultiplexChannels (AUTHENTICATED).
+   * Returns the full channel names including secrets.
+   */
+  async getUnlistedMultiplexChannels(): Promise<string[]> {
+    try {
+      const response = await this.client.get<MultiplexChannelListResponse>(
+        endpoints.getMultiplexChannels(config.ome.appUnlisted)
+      )
+      return response.data.response || []
+    } catch (error) {
+      console.error('Failed to fetch unlisted multiplex channels:', error)
+      return []
+    }
+  }
+
+  /**
+   * Get specific unlisted stream stats (PUBLIC — uses unlistedClient).
+   * Caller must know the full channelName (includes __ul__{secret}).
+   */
+  async getUnlistedStreamStats(channelName: string): Promise<StreamStatsResponse | null> {
+    try {
+      const response = await this.unlistedClient.get<StreamStatsResponse>(
+        endpoints.getStreamStats(channelName, config.ome.appUnlisted)
+      )
+      return response.data
+    } catch (error) {
+      console.error(`Failed to fetch unlisted stats for ${channelName}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Get specific unlisted stream details (PUBLIC — uses unlistedClient).
+   * Caller must know the full channelName (includes __ul__{secret}).
+   */
+  async getUnlistedStreamDetails(channelName: string): Promise<StreamDetailsResponse | null> {
+    try {
+      const response = await this.unlistedClient.get<StreamDetailsResponse>(
+        endpoints.getStreamDetails(channelName, config.ome.appUnlisted)
+      )
+      return response.data
+    } catch (error) {
+      console.error(`Failed to fetch unlisted details for ${channelName}:`, error)
+      return null
+    }
+  }
+
+  /**
+   * Get all live streams from the unlisted app (PUBLIC — uses unlistedClient).
+   * Used by the share page to verify if a stream is actually live.
+   * Note: this hits a specific-stream endpoint, not the listing endpoint.
+   */
+  async getUnlistedStreamByName(channelName: string): Promise<boolean> {
+    try {
+      const response = await this.unlistedClient.get<StreamDetailsResponse>(
+        endpoints.getStreamDetails(channelName, config.ome.appUnlisted)
+      )
+      return response.data.statusCode === 200
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Create an unlisted MultiplexChannel relay from the main app.
+   * The channel name embeds the secret: {streamName}__ul__{secret}
+   */
+  async makeStreamUnlisted(streamName: string, channelName: string): Promise<boolean> {
+    try {
+      const request: MultiplexChannelRequest = {
+        outputStream: {
+          name: channelName,
+        },
+        sourceStreams: [
+          {
+            name: streamName,
+            url: `stream://${config.ome.vhost}/${config.ome.app}/${streamName}`,
+            trackMap: [
+              {
+                sourceTrackName: 'bypass_video',
+                newTrackName: 'video',
+              },
+              {
+                sourceTrackName: 'bypass_audio',
+                newTrackName: 'audio',
+              },
+              {
+                sourceTrackName: 'opus_audio',
+                newTrackName: 'opus_audio',
+              },
+            ],
+          },
+        ],
+        playlists: [
+          {
+            name: 'for LLHLS',
+            fileName: 'multistream_llhls',
+            renditions: [
+              {
+                name: 'Source',
+                video: 'video',
+                audio: 'audio',
+              },
+            ],
+          },
+          {
+            name: 'for WebRTC',
+            fileName: 'multistream_webrtc',
+            renditions: [
+              {
+                name: 'Source',
+                video: 'video',
+                audio: 'opus_audio',
+              },
+            ],
+          },
+        ],
+      }
+      const response = await this.client.post<MultiplexChannelResponse>(
+        endpoints.createMultiplexChannel(config.ome.appUnlisted),
+        request
+      )
+      return response.data.statusCode === 200 || response.data.statusCode === 201
+    } catch (error) {
+      console.error(`Failed to make stream unlisted: ${streamName}`, error)
+      return false
+    }
+  }
+
+  /**
+   * Remove an unlisted stream by deleting its MultiplexChannel from the unlisted app.
+   */
+  async removeUnlistedStream(channelName: string): Promise<boolean> {
+    try {
+      const response = await this.client.delete(
+        endpoints.deleteMultiplexChannel(channelName, config.ome.appUnlisted)
+      )
+      return response.status === 200 || response.status === 204
+    } catch (error) {
+      console.error(`Failed to remove unlisted stream: ${channelName}`, error)
       return false
     }
   }

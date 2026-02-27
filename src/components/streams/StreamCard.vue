@@ -96,6 +96,17 @@
         <v-icon icon="mdi-earth" size="x-small" start></v-icon>
         PUBLIC
       </v-chip>
+      <!-- Unlisted badge -->
+      <v-chip
+        v-if="stream.isUnlisted"
+        color="orange"
+        size="x-small"
+        variant="flat"
+        class="ml-2"
+      >
+        <v-icon icon="mdi-link-lock" size="x-small" start></v-icon>
+        UNLISTED
+      </v-chip>
     </v-card-title>
 
     <v-card-actions>

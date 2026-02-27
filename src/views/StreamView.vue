@@ -106,6 +106,80 @@
               </v-card>
             </div>
 
+            <!-- Unlisted share link -->
+            <div class="mt-4">
+              <v-card elevation="2">
+                <v-card-title class="text-subtitle-1">
+                  <v-icon :icon="currentStream?.isUnlisted ? 'mdi-link-lock' : 'mdi-link-off'" start :color="currentStream?.isUnlisted ? 'orange' : 'grey'"></v-icon>
+                  Unlisted Share Link
+                </v-card-title>
+                <v-card-text>
+                  <p class="text-body-2 mb-3">
+                    {{ currentStream?.isUnlisted
+                      ? 'Anyone with the link below can watch this stream without logging in.'
+                      : 'Create a secret share link so anyone with it can watch — without it appearing publicly.' }}
+                  </p>
+
+                  <!-- Share URL display (when unlisted) -->
+                  <div v-if="currentStream?.isUnlisted && unlistedShareUrl" class="mb-3">
+                    <v-text-field
+                      :model-value="unlistedShareUrl"
+                      readonly
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      class="mb-2"
+                    >
+                      <template #append-inner>
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="small"
+                          variant="text"
+                          @click.stop="copyShareUrl"
+                        ></v-btn>
+                      </template>
+                    </v-text-field>
+
+                    <div class="d-flex gap-2">
+                      <v-btn
+                        color="orange"
+                        variant="tonal"
+                        size="small"
+                        :loading="regeneratingSecret"
+                        @click="regenerateSecret"
+                      >
+                        <v-icon icon="mdi-refresh" start></v-icon>
+                        Regenerate Link
+                      </v-btn>
+                      <v-btn
+                        color="grey"
+                        variant="tonal"
+                        size="small"
+                        :loading="togglingUnlisted"
+                        @click="removeUnlisted"
+                      >
+                        <v-icon icon="mdi-link-off" start></v-icon>
+                        Remove Link
+                      </v-btn>
+                    </div>
+                  </div>
+
+                  <!-- Create button (when not unlisted) -->
+                  <v-btn
+                    v-if="!currentStream?.isUnlisted"
+                    color="orange"
+                    variant="flat"
+                    block
+                    :loading="togglingUnlisted"
+                    @click="createUnlistedLink"
+                  >
+                    <v-icon icon="mdi-link-lock" start></v-icon>
+                    Create Share Link
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </div>
+
             <div class="mt-4">
               <RecordingControls :stream-name="streamName" />
             </div>
@@ -186,11 +260,18 @@ const statsLoading = computed(() => streamStore.loading)
 const showStopDialog = ref(false)
 const deletingStream = ref(false)
 const togglingVisibility = ref(false)
+const togglingUnlisted = ref(false)
+const regeneratingSecret = ref(false)
 const streamAccessible = ref<boolean | null>(null) // null = checking, true = accessible, false = not
 const isPublicStream = ref(false)
 
 const currentStream = computed(() =>
   streamStore.streams.find(s => s.name === streamName.value)
+)
+
+// Computed share URL for the unlisted link
+const unlistedShareUrl = computed(() =>
+  streamStore.getUnlistedShareUrl(streamName.value)
 )
 
 // Generate playback sources based on auth state and stream visibility
@@ -249,6 +330,55 @@ async function toggleVisibility() {
     console.error('Failed to toggle stream visibility:', err)
   } finally {
     togglingVisibility.value = false
+  }
+}
+
+// ============================================
+// Unlisted share link actions
+// ============================================
+
+async function createUnlistedLink() {
+  togglingUnlisted.value = true
+  try {
+    const shareUrl = await streamStore.makeStreamUnlisted(streamName.value)
+    if (shareUrl) {
+      await navigator.clipboard.writeText(shareUrl)
+    }
+  } catch (err) {
+    console.error('Failed to create unlisted link:', err)
+  } finally {
+    togglingUnlisted.value = false
+  }
+}
+
+async function removeUnlisted() {
+  togglingUnlisted.value = true
+  try {
+    await streamStore.removeUnlistedStream(streamName.value)
+  } catch (err) {
+    console.error('Failed to remove unlisted link:', err)
+  } finally {
+    togglingUnlisted.value = false
+  }
+}
+
+async function regenerateSecret() {
+  regeneratingSecret.value = true
+  try {
+    const shareUrl = await streamStore.regenerateUnlistedSecret(streamName.value)
+    if (shareUrl) {
+      await navigator.clipboard.writeText(shareUrl)
+    }
+  } catch (err) {
+    console.error('Failed to regenerate unlisted secret:', err)
+  } finally {
+    regeneratingSecret.value = false
+  }
+}
+
+async function copyShareUrl() {
+  if (unlistedShareUrl.value) {
+    await navigator.clipboard.writeText(unlistedShareUrl.value)
   }
 }
 

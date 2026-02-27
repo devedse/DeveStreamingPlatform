@@ -60,6 +60,10 @@ export interface StreamInfo {
   isPublic?: boolean
   /** Whether this is an orphaned public stream (exists in public app but not in main app) */
   isOrphaned?: boolean
+  /** Whether this stream has an unlisted share link (exists in unlisted app) */
+  isUnlisted?: boolean
+  /** The full MultiplexChannel name in the unlisted app (includes __ul__{secret}) */
+  unlistedChannelName?: string
 }
 
 // Stream Details with variants

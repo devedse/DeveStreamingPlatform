@@ -1,0 +1,1 @@
+curl.exe -X POST "http://10.88.28.213:8081/v1/vhosts/default/apps/app/streams" -H "Content-Type: application/json" -H "Authorization: Basic b21lLWFjY2Vzcy10b2tlbg==" --data-raw '{"name":"rtsp_stream","urls":["rtsps://10.88.10.252:7441/FgwzxkysHpV49Tz8?enableSrtp"]}'

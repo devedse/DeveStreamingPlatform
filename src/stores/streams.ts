@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { omeApi } from '@/services/api/omeApi'
 import { useAuthStore } from '@/stores/auth'
 import { type StreamInfo, type StreamStats } from '@/services/api/types'
+import { parseUnlistedChannelName, generateSecret, buildUnlistedChannelName, buildShareUrl } from '@/utils/unlistedSecrets'
 
 export const useStreamStore = defineStore('streams', () => {
   const authStore = useAuthStore()
@@ -15,6 +16,8 @@ export const useStreamStore = defineStore('streams', () => {
   const error = ref<string | null>(null)
   /** Names of streams that exist in the public app */
   const publicStreamNames = ref<Set<string>>(new Set())
+  /** Map of streamName → full unlisted channel name (includes __ul__{secret}) */
+  const unlistedChannelNames = ref<Map<string, string>>(new Map())
 
   // Getters
   const activeStream = computed(() =>
@@ -39,6 +42,11 @@ export const useStreamStore = defineStore('streams', () => {
   /** Orphaned public streams (MultiplexChannel with no matching source stream) */
   const orphanedStreams = computed(() =>
     streams.value.filter((s: StreamInfo) => s.isOrphaned)
+  )
+
+  /** Streams that have an unlisted share link */
+  const unlistedStreams = computed(() =>
+    streams.value.filter((s: StreamInfo) => s.isUnlisted)
   )
 
   const totalViewers = computed(() =>
@@ -68,15 +76,26 @@ export const useStreamStore = defineStore('streams', () => {
    * (for authenticated users)
    */
   async function fetchAllStreams() {
-    // Fetch main app streams and public app streams in parallel
+    // Fetch main app streams, public app streams, and unlisted channels in parallel
     // Use multiplexChannels to determine which streams are configured as public
     // (this shows intent, even if the stream isn't live in app-public yet)
-    const [streamNames, publicNames] = await Promise.all([
+    const [streamNames, publicNames, unlistedNames] = await Promise.all([
       omeApi.getStreams(),
       omeApi.getPublicMultiplexChannels(),
+      omeApi.getUnlistedMultiplexChannels(),
     ])
 
     publicStreamNames.value = new Set(publicNames)
+
+    // Parse unlisted channel names to map streamName → full channel name
+    unlistedChannelNames.value = new Map()
+    for (const ch of unlistedNames) {
+      const parsed = parseUnlistedChannelName(ch)
+      if (parsed) {
+        unlistedChannelNames.value.set(parsed.streamName, ch)
+      }
+    }
+
     const existingMap = new Map(streams.value.map(stream => [stream.name, stream]))
 
     const nextStreams: StreamInfo[] = streamNames.map((name) => {
@@ -87,6 +106,8 @@ export const useStreamStore = defineStore('streams', () => {
         viewerCount: existing?.viewerCount ?? 0,
         isRecording: existing?.isRecording ?? false,
         isPublic: publicStreamNames.value.has(name),
+        isUnlisted: unlistedChannelNames.value.has(name),
+        unlistedChannelName: unlistedChannelNames.value.get(name),
         stats: existing?.stats,
         width: existing?.width,
         height: existing?.height,
@@ -289,6 +310,64 @@ export const useStreamStore = defineStore('streams', () => {
     return publicNames.includes(streamName)
   }
 
+  // ============================================
+  // Unlisted stream actions
+  // ============================================
+
+  /**
+   * Create an unlisted share link for a stream.
+   * Returns the share URL on success, or null on failure.
+   */
+  async function makeStreamUnlisted(streamName: string): Promise<string | null> {
+    const secret = generateSecret()
+    const channelName = buildUnlistedChannelName(streamName, secret)
+    const success = await omeApi.makeStreamUnlisted(streamName, channelName)
+    if (success) {
+      unlistedChannelNames.value.set(streamName, channelName)
+      const stream = streams.value.find(s => s.name === streamName)
+      if (stream) {
+        stream.isUnlisted = true
+        stream.unlistedChannelName = channelName
+      }
+      return buildShareUrl(channelName)
+    }
+    return null
+  }
+
+  /**
+   * Remove the unlisted share link for a stream.
+   */
+  async function removeUnlistedStream(streamName: string): Promise<boolean> {
+    const channelName = unlistedChannelNames.value.get(streamName)
+    if (!channelName) return false
+    const success = await omeApi.removeUnlistedStream(channelName)
+    if (success) {
+      unlistedChannelNames.value.delete(streamName)
+      const stream = streams.value.find(s => s.name === streamName)
+      if (stream) {
+        stream.isUnlisted = false
+        stream.unlistedChannelName = undefined
+      }
+    }
+    return success
+  }
+
+  /**
+   * Regenerate the unlisted secret (old link stops working, new link is returned).
+   */
+  async function regenerateUnlistedSecret(streamName: string): Promise<string | null> {
+    await removeUnlistedStream(streamName)
+    return makeStreamUnlisted(streamName)
+  }
+
+  /**
+   * Get the share URL for an unlisted stream (if it exists).
+   */
+  function getUnlistedShareUrl(streamName: string): string | null {
+    const channelName = unlistedChannelNames.value.get(streamName)
+    return channelName ? buildShareUrl(channelName) : null
+  }
+
   // Helper function to calculate total viewer count from connections
   function calculateViewerCount(stats: StreamStats): number {
     return Object.values(stats.connections).reduce((sum: number, count: unknown) => sum + (count as number), 0)
@@ -327,12 +406,14 @@ export const useStreamStore = defineStore('streams', () => {
     loading,
     error,
     publicStreamNames,
+    unlistedChannelNames,
     // Getters
     activeStream,
     liveStreams,
     publicLiveStreams,
     visibleStreams,
     orphanedStreams,
+    unlistedStreams,
     totalViewers,
     // Actions
     fetchStreams,
@@ -343,6 +424,10 @@ export const useStreamStore = defineStore('streams', () => {
     makeStreamPrivate,
     deleteOrphanedStream,
     isStreamPublic,
+    makeStreamUnlisted,
+    removeUnlistedStream,
+    regenerateUnlistedSecret,
+    getUnlistedShareUrl,
     startPolling,
     stopPolling,
   }
