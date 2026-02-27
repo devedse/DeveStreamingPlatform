@@ -379,16 +379,20 @@ export const useStreamStore = defineStore('streams', () => {
   // Polling
   let pollInterval: number | null = null
 
-  function startPolling(intervalMs = 5000) {
+  function pollTick() {
+    fetchStreams()
+    if (activeStreamName.value) {
+      fetchStreamStats(activeStreamName.value)
+    }
+  }
+
+  async function startPolling(intervalMs = 5000) {
     if (pollInterval) return
 
-    pollInterval = window.setInterval(() => {
-      if (!activeStreamName.value) {
-        fetchStreams()
-      } else {
-        fetchStreamStats(activeStreamName.value)
-      }
-    }, intervalMs)
+    // Immediate first fetch so callers don't need a separate fetchStreams() call
+    await pollTick()
+
+    pollInterval = window.setInterval(pollTick, intervalMs)
   }
 
   function stopPolling() {

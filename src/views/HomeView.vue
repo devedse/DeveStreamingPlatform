@@ -93,16 +93,15 @@ const error = computed({
 })
 
 onMounted(async () => {
-  await refreshStreams()
-  // Start polling for updates every 5 seconds
-  streamStore.startPolling(5000)
+  // Start polling (includes immediate first fetch)
+  await streamStore.startPolling(5000)
 })
 
 onBeforeUnmount(() => {
-  // Stop polling when leaving the page
   streamStore.stopPolling()
 })
 
+// Manual refresh button
 async function refreshStreams() {
   await streamStore.fetchStreams()
 }

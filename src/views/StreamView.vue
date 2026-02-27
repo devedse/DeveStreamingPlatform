@@ -406,7 +406,8 @@ async function initStream() {
 
   if (streamAccessible.value) {
     streamStore.setActiveStream(streamName.value)
-    streamStore.startPolling(3000)
+    // startPolling does an immediate fetchStreams() which loads public/unlisted state
+    await streamStore.startPolling(3000)
   }
 }
 
