@@ -17,6 +17,16 @@ export ADMIN_PASSWORD_HASH=$(printf '%s' "${ADMIN_PASSWORD}" | sha256sum | cut -
 export AUTH_COOKIE_HASH=$(printf '%s' "dsp-cookie:${ADMIN_PASSWORD}" | sha256sum | cut -d' ' -f1)
 echo "✓ Cookie-based authentication configured"
 
+# Secure flag on cookies — enabled by default (requires HTTPS / TLS-terminating proxy)
+# Set DISABLE_SECURE_COOKIES=true only for plain-HTTP development/testing
+if [ "$DISABLE_SECURE_COOKIES" = "true" ]; then
+    export COOKIE_SECURE_FLAG=""
+    echo "⚠ Cookie Secure flag DISABLED (plain HTTP mode — do NOT use in production)"
+else
+    export COOKIE_SECURE_FLAG="; Secure"
+    echo "✓ Cookie Secure flag enabled (set DISABLE_SECURE_COOKIES=true for plain HTTP)"
+fi
+
 # ============================================
 # OME API Configuration
 # ============================================
@@ -84,7 +94,7 @@ echo "✓ Public app configured: ${OME_APP_PUBLIC}"
 
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
-envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN} ${AUTH_COOKIE_HASH} ${ADMIN_PASSWORD_HASH} ${OME_APP_PUBLIC} ${OME_VHOST} ${OME_APP}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN} ${AUTH_COOKIE_HASH} ${ADMIN_PASSWORD_HASH} ${OME_APP_PUBLIC} ${OME_VHOST} ${OME_APP} ${COOKIE_SECURE_FLAG}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
 mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 
 # ============================================
