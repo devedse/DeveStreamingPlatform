@@ -55,7 +55,7 @@
               :sources="playbackSources"
               :stream-name="channelName"
               :autoplay="true"
-              :mute="false"
+              :mute="true"
             />
           </v-card>
         </div>
