@@ -61,7 +61,11 @@ function initPlayer() {
       autoStart: props.autoplay,
       controls: true,
       mute: props.mute,
-      volume: 0,
+      // Use volume:100 instead of volume:0. OvenPlayer's mobile touchstart
+      // handler only toggles the mute flag without adjusting volume, so
+      // volume:0 makes unmute appear broken on mobile (desktop click handler
+      // has a special case that sets volume to 100 when it's 0, but mobile doesn't).
+      volume: 100,
       showBigPlayButton: true,
       aspectRatio: 'auto',
       autoFallback: false,
