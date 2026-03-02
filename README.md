@@ -1,19 +1,35 @@
 # Deve Streaming Platform
 
-A modern web interface for managing and viewing live streams with OvenMediaEngine.
+[![Discord](https://img.shields.io/discord/1409884932288806936?logo=discord&label=Discord)](https://discord.gg/3Jb72sRJ6T)
+
+A simple streaming platform built on [OvenMediaEngine](https://github.com/AirenSoft/OvenMediaEngine), designed for sharing streams, desktops, and games with friends.
+
+The idea is straightforward: you and your friends are a **trusted group** who all share a single admin password. Once logged in, everyone can manage streams — start recording, toggle visibility, create share links, etc. There's no complex user/role system; if you have the password, you're an admin.
+
+### Stream Visibility
+
+Streams fall into three categories:
+
+| Category | Visible to | Description |
+|----------|-----------|-------------|
+| **Private** (default) | Admins only | Every new stream starts private. Only logged-in users can see or watch it. |
+| **Public** | Everyone | Admins can publish a stream to the front page so anyone (even without logging in) can watch. |
+| **Unlisted** | Anyone with the link | Admins can generate a secret share link. The stream won't appear anywhere publicly, but anyone with the link can watch. |
+
+Non-authenticated visitors only see public streams. All management actions (recording, toggling visibility, pulling streams, etc.) require login.
 
 ![Deve Streaming Platform](Screenshot1.png)
 
 ## Features
 
-- 📺 Live Stream Management - View all active streams in real-time
-- � Public/Private Streams - Make streams publicly visible or keep them private (login required)
-- 🖼️ Stream Thumbnails - Automatic thumbnail generation from live streams
-- 📊 Stream Statistics - Monitor bitrate, resolution, codec, and viewer count
-- 🎬 Integrated Player - Built-in OvenPlayer for WebRTC playback
-- 🌐 Multi-Protocol Support - Generate URLs for SRT, RTMP, WebRTC, and WHIP
-- ⚡ Low Latency - WebRTC support for sub-second latency streaming
-- 🔑 Cookie-Based Authentication - Secure admin login with HttpOnly cookies
+- 📺 **Live Stream Management** — View and manage all active streams in real-time
+- 🔒 **Private / Public / Unlisted Streams** — Control who can see each stream
+- 🖼️ **Stream Thumbnails** — Automatic thumbnail generation from live streams
+- 📊 **Stream Statistics** — Monitor bitrate, resolution, codec, and viewer count
+- 🎬 **Integrated Player** — Built-in OvenPlayer for WebRTC playback
+- 🌐 **Multi-Protocol Support** — Generate URLs for SRT, RTMP, WebRTC, and WHIP
+- ⚡ **Low Latency** — WebRTC support for sub-second latency streaming
+- 🔑 **Shared Admin Password** — Single password login with HttpOnly cookie auth
 
 ## Screenshots
 
@@ -28,7 +44,7 @@ Individual stream view with integrated OvenPlayer showing live playback, detaile
 ![Stream Details and Player](Screenshot2.png)
 
 ### Recording
-It's also possible to start recording a stream.
+Admins can start recording any stream directly from the UI.
 
 ![Recording](Screenshot3.png)
 
@@ -51,8 +67,10 @@ Grid layout displaying multiple streams simultaneously, perfect for monitoring s
 
 ## Usage
 
-1. **Add a Stream**: Click the "+" button to generate streaming URLs
-2. **Start Streaming**: Use the generated URLs in OBS or other streaming software
+1. **Log in** with the shared admin password
+2. **Add a Stream** — Click the "+" button to generate SRT/RTMP/WebRTC streaming URLs
+3. **Start Streaming** — Use the generated URLs in OBS or other streaming software
+4. **Manage Visibility** — Toggle streams to public or create unlisted share links as needed
 
 ## Docker Deployment
 
@@ -147,16 +165,12 @@ services:
 | `OME_PUBLISHER_WEBRTC_URL` | WebRTC playback URL (e.g., `wss://host:3334`) | Yes |
 | `OME_PUBLISHER_LLHLS_URL` | LLHLS playback URL (e.g., `https://host:3334`) | Yes |
 
-### Public/Private Streams
+### How Stream Visibility Works
 
-Streams land in the **main app** (`OME_APP`) and are private by default. Authenticated admins can toggle a stream to public via the UI, which creates a MultiplexChannel in the **public app** (`OME_APP_PUBLIC`) using OME's `stream://` protocol for zero-copy internal relay.
+All streams land in the **private app** (`OME_APP`) by default. Admins can then:
 
-- **Unauthenticated users** see only public streams
-- **Authenticated users** see all streams and can manage visibility, recordings, and pull streams
-
-### Unlisted Streams
-
-Admins can also create a **secret share link** for any stream. This creates a MultiplexChannel in the **unlisted app** (`OME_APP_UNLISTED`) with a random secret embedded in the channel name. Anyone with the link can watch without logging in, but the stream is not listed publicly.
+- **Make a stream public** — creates a MultiplexChannel in the **public app** (`OME_APP_PUBLIC`) using OME's `stream://` protocol for zero-copy internal relay. The stream appears on the front page for everyone.
+- **Create an unlisted share link** — creates a MultiplexChannel in the **unlisted app** (`OME_APP_UNLISTED`) with a random secret in the channel name. Anyone with the link can watch, but the stream won't appear anywhere publicly.
 
 > **Important:** `OME_APP_UNLISTED` must be a **different** OME application than `OME_APP_PUBLIC`. If both point to the same app, unlisted streams will appear as public streams.
 
