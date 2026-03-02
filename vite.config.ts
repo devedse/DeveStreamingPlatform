@@ -151,6 +151,18 @@ export default defineConfig(({ mode }) => {
               })
             }
           },
+          // Unlisted API proxy (same OME target, specific-stream only in prod but proxied equally in dev)
+          '/unlisted-api': {
+            target: apiTarget,
+            changeOrigin: true,
+            rewrite: (path: string) => path.replace(/^\/unlisted-api/, ''),
+            configure: (proxy: any, _options: any) => {
+              proxy.on('proxyReq', (proxyReq: any, _req: any, _res: any) => {
+                const base64Auth = Buffer.from(apiToken).toString('base64')
+                proxyReq.setHeader('Authorization', `Basic ${base64Auth}`)
+              })
+            }
+          },
           '/thumbnails': {
             target: thumbnailTarget,
             changeOrigin: true,
@@ -160,6 +172,11 @@ export default defineConfig(({ mode }) => {
             target: thumbnailTarget,
             changeOrigin: true,
             rewrite: (path: string) => path.replace(/^\/public-thumbnails/, '')
+          },
+          '/unlisted-thumbnails': {
+            target: thumbnailTarget,
+            changeOrigin: true,
+            rewrite: (path: string) => path.replace(/^\/unlisted-thumbnails/, '')
           }
         }
       }

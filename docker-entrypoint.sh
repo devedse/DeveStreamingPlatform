@@ -87,6 +87,13 @@ if [ -z "$OME_APP_PUBLIC" ]; then
 fi
 echo "✓ Public app configured: ${OME_APP_PUBLIC}"
 
+# Unlisted app name (the OME application that holds unlisted/secret-link streams via Multiplex)
+if [ -z "$OME_APP_UNLISTED" ]; then
+    echo "❌ ERROR: OME_APP_UNLISTED environment variable is required!"
+    exit 1
+fi
+echo "✓ Unlisted app configured: ${OME_APP_UNLISTED}"
+
 
 # ============================================
 # Nginx Configuration
@@ -94,7 +101,7 @@ echo "✓ Public app configured: ${OME_APP_PUBLIC}"
 
 # Substitute environment variables in nginx config
 echo "✓ Configuring nginx with environment variables..."
-envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN} ${AUTH_COOKIE_HASH} ${ADMIN_PASSWORD_HASH} ${OME_APP_PUBLIC} ${OME_VHOST} ${OME_APP} ${COOKIE_SECURE_FLAG}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
+envsubst '${OME_API_PROXY_URL} ${OME_API_TOKEN_BASE64} ${OME_THUMBNAIL_PROXY_URL} ${STREAM_AUTH_TOKEN} ${AUTH_COOKIE_HASH} ${ADMIN_PASSWORD_HASH} ${OME_APP_PUBLIC} ${OME_APP_UNLISTED} ${OME_VHOST} ${OME_APP} ${COOKIE_SECURE_FLAG}' < /etc/nginx/nginx.conf > /etc/nginx/nginx.conf.tmp
 mv /etc/nginx/nginx.conf.tmp /etc/nginx/nginx.conf
 
 # ============================================
@@ -110,6 +117,7 @@ window.ENV_CONFIG = {
   OME_VHOST: "${OME_VHOST}",
   OME_APP: "${OME_APP}",
   OME_APP_PUBLIC: "${OME_APP_PUBLIC}",
+  OME_APP_UNLISTED: "${OME_APP_UNLISTED}",
   OME_PROVIDER_WEBRTC_URL: "${OME_PROVIDER_WEBRTC_URL}",
   OME_PROVIDER_RTMP_URL: "${OME_PROVIDER_RTMP_URL}",
   OME_PROVIDER_SRT_URL: "${OME_PROVIDER_SRT_URL}",

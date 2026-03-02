@@ -107,6 +107,7 @@ services:
       - OME_VHOST=default
       - OME_APP=app
       - OME_APP_PUBLIC=public
+      - OME_APP_UNLISTED=unlisted
 
       # Provider URLs (for stream ingestion - shown to streamers)
       - OME_PROVIDER_WEBRTC_URL=wss://yourdomain.example.com:3334
@@ -137,6 +138,7 @@ services:
 | `OME_VHOST` | OME virtual host name | Yes |
 | `OME_APP` | OME application name (main/private streams) | Yes |
 | `OME_APP_PUBLIC` | OME application name for public streams | Yes |
+| `OME_APP_UNLISTED` | OME application name for unlisted (secret-link) streams | Yes |
 | **Provider URLs (Ingestion)** | | |
 | `OME_PROVIDER_WEBRTC_URL` | WebRTC push URL (e.g., `wss://host:3334`) | Yes |
 | `OME_PROVIDER_RTMP_URL` | RTMP URL (e.g., `rtmp://host:1935`) | Yes |
@@ -152,7 +154,33 @@ Streams land in the **main app** (`OME_APP`) and are private by default. Authent
 - **Unauthenticated users** see only public streams
 - **Authenticated users** see all streams and can manage visibility, recordings, and pull streams
 
-The public app needs OVT and Multiplex providers enabled in your OME `Server.xml`. See `ovenmediaengine_example_Server.xml` for a working example.
+### Unlisted Streams
+
+Admins can also create a **secret share link** for any stream. This creates a MultiplexChannel in the **unlisted app** (`OME_APP_UNLISTED`) with a random secret embedded in the channel name. Anyone with the link can watch without logging in, but the stream is not listed publicly.
+
+> **Important:** `OME_APP_UNLISTED` must be a **different** OME application than `OME_APP_PUBLIC`. If both point to the same app, unlisted streams will appear as public streams.
+
+Both the public and unlisted apps need OVT and Multiplex providers enabled in your OME `Server.xml`. **Each app must use a separate `<MuxFilesDir>`** to prevent OME's Multiplex provider from broadcasting channels across apps:
+
+```xml
+<!-- In the public app -->
+<Multiplex>
+    <MuxFilesDir>mux_files/public</MuxFilesDir>
+</Multiplex>
+
+<!-- In the unlisted app -->
+<Multiplex>
+    <MuxFilesDir>mux_files/unlisted</MuxFilesDir>
+</Multiplex>
+```
+
+You must also create these directories inside your OME `origin_conf` folder:
+
+```bash
+mkdir -p origin_conf/mux_files/public origin_conf/mux_files/unlisted
+```
+
+See `ovenmediaengine_example_Server.xml` for a complete working example.
 
 ### AdmissionWebhooks (Stream Security)
 
@@ -169,7 +197,7 @@ Configure OvenMediaEngine to validate stream connections via the platform's webh
 </AdmissionWebhooks>
 ```
 
-The webhook auto-allows streams in the public app and requires `?auth=<STREAM_AUTH_TOKEN>` for private app streams.
+The webhook auto-allows streams in the public and unlisted apps, and requires `?auth=<STREAM_AUTH_TOKEN>` for private app streams.
 
 ## Local Development
 
@@ -195,6 +223,7 @@ VITE_PUBLISHER_LLHLS_URL=http://your-ome-server:3333
 VITE_OME_VHOST=default
 VITE_OME_APP=app
 VITE_OME_APP_PUBLIC=public
+VITE_OME_APP_UNLISTED=unlisted
 
 VITE_ADMIN_PASSWORD=admin
 VITE_STREAM_AUTH_TOKEN=test123

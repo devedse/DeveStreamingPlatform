@@ -5,6 +5,7 @@ declare global {
       OME_VHOST?: string
       OME_APP?: string
       OME_APP_PUBLIC?: string
+      OME_APP_UNLISTED?: string
       // Provider URLs (for ingestion/pushing streams)
       OME_PROVIDER_WEBRTC_URL?: string
       OME_PROVIDER_RTMP_URL?: string
@@ -43,6 +44,8 @@ export const config = {
     baseUrl: '/omeapi',
     // Public API path (read-only, no auth required)
     publicBaseUrl: '/public-api',
+    // Unlisted API path (read-only, specific-stream only, no auth required)
+    unlistedBaseUrl: '/unlisted-api',
     // Thumbnail proxy path (handled by nginx in prod, vite in dev)
     thumbnailUrl: '/thumbnails',
     // Public thumbnail proxy path (no auth required)
@@ -53,6 +56,8 @@ export const config = {
     app: requireEnv('OME_APP', 'VITE_OME_APP'),
     // Public app for streams visible to unauthenticated users
     appPublic: requireEnv('OME_APP_PUBLIC', 'VITE_OME_APP_PUBLIC'),
+    // Unlisted app for secret-link shared streams
+    appUnlisted: requireEnv('OME_APP_UNLISTED', 'VITE_OME_APP_UNLISTED'),
     // Provider URLs (for stream ingestion)
     providers: {
       webrtcUrl: getEnv('OME_PROVIDER_WEBRTC_URL', 'VITE_PROVIDER_WEBRTC_URL'),

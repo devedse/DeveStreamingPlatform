@@ -43,6 +43,11 @@ export const generateStreamDetailsUrl = (streamName: string) => {
   return `${config.api.baseUrl}${endpoints.getStreamDetails(streamName)}`
 }
 
+// Generate the shareable URL for an unlisted stream
+export const generateUnlistedShareUrl = (channelName: string): string => {
+  return `${window.location.origin}/s/${channelName}`
+}
+
 // Generate streaming URLs for a given stream name (for ingestion/providers)
 export const generateStreamUrls = (streamName: string) => {
   // Extract host and port from URLs

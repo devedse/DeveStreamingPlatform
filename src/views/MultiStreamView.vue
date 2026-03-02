@@ -485,8 +485,7 @@ function applySelection() {
 
 onMounted(async () => {
   applyRouteState()
-  await streamStore.fetchStreams()
-  streamStore.startPolling(5000)
+  await streamStore.startPolling(5000)
 
   if (selectionMode.value === 'all' && availableStreams.value.length === 0) {
     tempSelectedNames.value = []

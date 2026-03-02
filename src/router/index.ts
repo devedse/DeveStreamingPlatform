@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import StreamView from '@/views/StreamView.vue'
 import MultiStreamView from '@/views/MultiStreamView.vue'
+import UnlistedStreamView from '@/views/UnlistedStreamView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,14 @@ const router = createRouter({
       component: MultiStreamView,
       meta: {
         title: 'Multi-Stream View',
+      },
+    },
+    {
+      path: '/s/:channelName',
+      name: 'unlisted-stream',
+      component: UnlistedStreamView,
+      meta: {
+        title: 'Watch Stream',
       },
     },
   ],
