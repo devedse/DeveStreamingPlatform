@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/DeveStreamingPlatform.png" alt="Deve Streaming Platform Icon" width="200" />
+</p>
+
 # Deve Streaming Platform
 
 [![Discord](https://img.shields.io/discord/1409884932288806936?logo=discord&label=Discord)](https://discord.gg/3Jb72sRJ6T)
