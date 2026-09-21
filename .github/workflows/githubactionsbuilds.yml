@@ -93,7 +93,7 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         tag_name: 1.0.${{needs.generate_version_number.outputs.build_number}}
         name: 1.0.${{needs.generate_version_number.outputs.build_number}}
