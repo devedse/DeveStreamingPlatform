@@ -1,5 +1,5 @@
 # Build stage
-FROM node:25-alpine AS build
+FROM node:24-alpine AS build
 
 # Accept build version argument
 ARG BUILD_VERSION=dev
@@ -9,8 +9,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install pnpm and dependencies
-RUN npm install -g pnpm && pnpm install --frozen-lockfile
+# Keep the container package manager aligned with CI and the lockfile format.
+RUN npm install -g pnpm@10 && pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
