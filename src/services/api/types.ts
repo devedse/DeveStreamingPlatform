@@ -58,12 +58,20 @@ export interface StreamInfo {
   sourceType?: string
   /** Whether this stream is available on the public app (visible without login) */
   isPublic?: boolean
-  /** Whether this is an orphaned public stream (exists in public app but not in main app) */
-  isOrphaned?: boolean
   /** Whether this stream has an unlisted share link (exists in unlisted app) */
   isUnlisted?: boolean
   /** The full MultiplexChannel name in the unlisted app (includes __ul__{secret}) */
   unlistedChannelName?: string
+}
+
+export type StreamEndpointType = 'public' | 'unlisted'
+
+/** A configured relay whose source stream is no longer live. */
+export interface InactiveStreamEndpoint {
+  type: StreamEndpointType
+  sourceStreamName: string | null
+  /** Exact MultiplexChannel name used when deleting the endpoint. */
+  channelName: string
 }
 
 // Stream Details with variants

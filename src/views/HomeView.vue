@@ -31,18 +31,29 @@
     <!-- Stream grid -->
     <StreamGrid :streams="streams" :loading="loading" />
 
-    <!-- Orphaned public streams section -->
-    <template v-if="authStore.isAuthenticated && orphanedStreams.length > 0">
+    <!-- Configured endpoints whose source stream has stopped -->
+    <template v-if="authStore.isAuthenticated && inactiveEndpoints.length > 0">
       <v-divider class="my-6" />
       <div class="d-flex align-center mb-4">
         <v-icon icon="mdi-alert-circle" color="warning" class="mr-2" />
-        <h2 class="text-h5 font-weight-medium">Orphaned Public Streams</h2>
-        <v-chip color="warning" size="small" class="ml-3">{{ orphanedStreams.length }}</v-chip>
+        <h2 class="text-h5 font-weight-medium">Inactive Stream Endpoints</h2>
+        <v-chip color="warning" size="small" class="ml-3">{{ inactiveEndpoints.length }}</v-chip>
       </div>
       <p class="text-body-2 text-grey mb-4">
-        These streams exist in the public app but have no matching source stream. They can be safely deleted.
+        These public or unlisted endpoints have no live source stream. Delete endpoints that are no longer needed.
       </p>
-      <StreamGrid :streams="orphanedStreams" />
+      <v-row>
+        <v-col
+          v-for="endpoint in inactiveEndpoints"
+          :key="`${endpoint.type}:${endpoint.channelName}`"
+          cols="12"
+          sm="6"
+          md="4"
+          lg="3"
+        >
+          <InactiveEndpointCard :endpoint="endpoint" />
+        </v-col>
+      </v-row>
     </template>
 
     <!-- Hint for unauthenticated users -->
@@ -79,13 +90,14 @@ import { useAuthStore } from '@/stores/auth'
 import StreamGrid from '@/components/streams/StreamGrid.vue'
 import AddStreamDialog from '@/components/streams/AddStreamDialog.vue'
 import PullStreamDialog from '@/components/streams/PullStreamDialog.vue'
+import InactiveEndpointCard from '@/components/streams/InactiveEndpointCard.vue'
 
 const streamStore = useStreamStore()
 const authStore = useAuthStore()
 
 // Show all streams if authenticated, only public if not
 const streams = computed(() => streamStore.visibleStreams)
-const orphanedStreams = computed(() => streamStore.orphanedStreams)
+const inactiveEndpoints = computed(() => streamStore.inactiveEndpoints)
 const loading = computed(() => streamStore.loading)
 const error = computed({
   get: () => streamStore.error,

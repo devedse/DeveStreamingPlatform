@@ -1,7 +1,6 @@
 <template>
   <v-card
     class="stream-card"
-    :class="{ 'orphaned-card': stream.isOrphaned }"
     hover
     elevation="4"
     rounded="lg"
@@ -23,19 +22,8 @@
         <!-- Live badge overlay -->
         <div class="stream-overlay">
           <div class="left-badges">
-            <!-- Orphaned badge -->
-            <v-chip
-              v-if="stream.isOrphaned"
-              color="warning"
-              size="small"
-              class="live-badge elevation-3"
-            >
-              <v-icon icon="mdi-alert" size="x-small" class="mr-1"></v-icon>
-              ORPHANED
-            </v-chip>
             <!-- Live badge -->
             <v-chip
-              v-else
               color="error"
               size="small"
               class="live-badge elevation-3"
@@ -110,31 +98,16 @@
     </v-card-title>
 
     <v-card-actions>
-      <template v-if="stream.isOrphaned">
-        <!-- Delete orphaned stream -->
-        <v-btn
-          color="warning"
-          variant="flat"
-          class="flex-grow-1"
-          :loading="deletingOrphan"
-          @click.stop="deleteOrphan"
-        >
-          <v-icon icon="mdi-delete" start></v-icon>
-          Delete Orphaned Stream
-        </v-btn>
-      </template>
-      <template v-else>
-        <v-btn
-          color="primary"
-          variant="flat"
-          class="flex-grow-1"
-          @click="goToStream"
-          @mouseup.stop="handleMouseUp"
-        >
-          <v-icon icon="mdi-play" start></v-icon>
-          Watch Now
-        </v-btn>
-      </template>
+      <v-btn
+        color="primary"
+        variant="flat"
+        class="flex-grow-1"
+        @click="goToStream"
+        @mouseup.stop="handleMouseUp"
+      >
+        <v-icon icon="mdi-play" start></v-icon>
+        Watch Now
+      </v-btn>
     </v-card-actions>
   </v-card>
 </template>
@@ -145,7 +118,6 @@ import { useRouter } from 'vue-router'
 import { type StreamInfo } from '@/services/api/types'
 import { generateThumbnailUrl } from '@/services/api/endpoints'
 import { useAuthStore } from '@/stores/auth'
-import { useStreamStore } from '@/stores/streams'
 
 interface Props {
   stream: StreamInfo
@@ -154,9 +126,7 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 const authStore = useAuthStore()
-const streamStore = useStreamStore()
 const displayedThumbnail = ref<string>('')
-const deletingOrphan = ref(false)
 
 // Check if this is a pulled stream (RtspPull, OvtPull, etc.)
 const isPulledStream = computed(() => {
@@ -168,9 +138,6 @@ const isPulledStream = computed(() => {
 // Note: Thumbnails are always served from the main app because the public app
 // uses bypass_video (passthrough) which the Thumbnail Publisher cannot decode.
 const thumbnailUrl = computed(() => {
-  // Orphaned streams have no source — no thumbnail to fetch
-  if (props.stream.isOrphaned) return null
-
   if (!authStore.isAuthenticated) {
     // Unauthenticated → use public thumbnail proxy (still fetches from main app)
     return generateThumbnailUrl(props.stream.name, {
@@ -212,19 +179,7 @@ watch(thumbnailUrl, (newUrl) => {
   }
 }, { immediate: true })
 
-async function deleteOrphan() {
-  deletingOrphan.value = true
-  try {
-    await streamStore.deleteOrphanedStream(props.stream.name)
-  } catch (err) {
-    console.error('Failed to delete orphaned stream:', err)
-  } finally {
-    deletingOrphan.value = false
-  }
-}
-
 function handleCardClick(event?: MouseEvent) {
-  if (props.stream.isOrphaned) return
   goToStream(event)
 }
 
@@ -253,12 +208,6 @@ function handleMouseUp(event: MouseEvent) {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-}
-
-.stream-card.orphaned-card {
-  border: 2px solid rgb(var(--v-theme-warning));
-  opacity: 0.85;
-  cursor: default;
 }
 
 .stream-card:hover {

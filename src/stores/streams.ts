@@ -2,7 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { omeApi } from '@/services/api/omeApi'
 import { useAuthStore } from '@/stores/auth'
-import { type StreamInfo, type StreamStats } from '@/services/api/types'
+import {
+  type InactiveStreamEndpoint,
+  type StreamInfo,
+  type StreamStats,
+} from '@/services/api/types'
 import { parseUnlistedChannelName, generateSecret, buildUnlistedChannelName, buildShareUrl } from '@/utils/unlistedSecrets'
 
 export const useStreamStore = defineStore('streams', () => {
@@ -15,8 +19,10 @@ export const useStreamStore = defineStore('streams', () => {
   const error = ref<string | null>(null)
   /** Names of streams that exist in the public app */
   const publicStreamNames = ref<Set<string>>(new Set())
-  /** Map of streamName → full unlisted channel name (includes __ul__{secret}) */
-  const unlistedChannelNames = ref<Map<string, string>>(new Map())
+  /** Map of streamName → all full unlisted channel names (includes __ul__{secret}) */
+  const unlistedChannelNames = ref<Map<string, string[]>>(new Map())
+  /** Configured public/unlisted endpoints whose source stream is not live. */
+  const inactiveEndpoints = ref<InactiveStreamEndpoint[]>([])
 
   // Getters
   const activeStream = computed(() =>
@@ -39,11 +45,6 @@ export const useStreamStore = defineStore('streams', () => {
   /** Streams to display based on auth state (excludes orphaned) */
   const visibleStreams = computed(() =>
     authStore.isAuthenticated ? liveStreams.value : publicLiveStreams.value
-  )
-
-  /** Orphaned public streams (MultiplexChannel with no matching source stream) */
-  const orphanedStreams = computed(() =>
-    streams.value.filter((s: StreamInfo) => s.isOrphaned)
   )
 
   /** Streams that have an unlisted share link */
@@ -89,12 +90,14 @@ export const useStreamStore = defineStore('streams', () => {
 
     publicStreamNames.value = new Set(publicNames)
 
-    // Parse unlisted channel names to map streamName → full channel name
+    // Preserve every unlisted channel. A source can have multiple legacy links.
     unlistedChannelNames.value = new Map()
     for (const ch of unlistedNames) {
       const parsed = parseUnlistedChannelName(ch)
       if (parsed) {
-        unlistedChannelNames.value.set(parsed.streamName, ch)
+        const channels = unlistedChannelNames.value.get(parsed.streamName) ?? []
+        channels.push(ch)
+        unlistedChannelNames.value.set(parsed.streamName, channels)
       }
     }
 
@@ -108,8 +111,8 @@ export const useStreamStore = defineStore('streams', () => {
         viewerCount: existing?.viewerCount ?? 0,
         isRecording: existing?.isRecording ?? false,
         isPublic: publicStreamNames.value.has(name),
-        isUnlisted: unlistedChannelNames.value.has(name),
-        unlistedChannelName: unlistedChannelNames.value.get(name),
+        isUnlisted: (unlistedChannelNames.value.get(name)?.length ?? 0) > 0,
+        unlistedChannelName: getLastChannel(unlistedChannelNames.value.get(name)),
         stats: existing?.stats,
         width: existing?.width,
         height: existing?.height,
@@ -117,29 +120,36 @@ export const useStreamStore = defineStore('streams', () => {
       }
     })
 
-    // Detect orphaned public streams (exist in public app but not in main app)
+    // Detect configured endpoints whose source stream is no longer live.
     const mainStreamSet = new Set(streamNames)
-    const orphanedStreams: StreamInfo[] = publicNames
+    const inactivePublicEndpoints: InactiveStreamEndpoint[] = publicNames
       .filter(name => !mainStreamSet.has(name))
-      .map((name) => {
-        const existing = existingMap.get(name)
-        return {
-          name,
-          isLive: false,
-          viewerCount: existing?.viewerCount ?? 0,
-          isPublic: true,
-          isOrphaned: true,
-          stats: existing?.stats,
-        }
-      })
+      .map(channelName => ({
+        type: 'public',
+        sourceStreamName: channelName,
+        channelName,
+      }))
 
-    streams.value = [...nextStreams, ...orphanedStreams]
+    const inactiveUnlistedEndpoints: InactiveStreamEndpoint[] = unlistedNames
+      .map(channelName => ({
+        channelName,
+        parsed: parseUnlistedChannelName(channelName),
+      }))
+      .filter(({ parsed }) => !parsed || !mainStreamSet.has(parsed.streamName))
+      .map(({ channelName, parsed }) => ({
+        type: 'unlisted',
+        sourceStreamName: parsed?.streamName ?? null,
+        channelName,
+      }))
+
+    inactiveEndpoints.value = [...inactivePublicEndpoints, ...inactiveUnlistedEndpoints]
+    streams.value = nextStreams
 
     const recordings = await omeApi.getRecordingState()
 
-    // Only fetch stats/details for non-orphaned streams (orphaned ones don't exist in the main app)
+    // Inactive endpoints are kept separately, so every stream here exists in the main app.
     await Promise.all(
-      streams.value.filter(stream => !stream.isOrphaned).map(async (stream) => {
+      streams.value.map(async (stream) => {
         const [statsResponse, detailsResponse] = await Promise.all([
           omeApi.getStreamStats(stream.name),
           omeApi.getStreamDetails(stream.name),
@@ -288,14 +298,22 @@ export const useStreamStore = defineStore('streams', () => {
     return success
   }
 
-  /**
-   * Delete an orphaned public stream (MultiplexChannel with no matching source stream)
-   */
-  async function deleteOrphanedStream(streamName: string): Promise<boolean> {
-    const success = await omeApi.makeStreamPrivate(streamName)
+  /** Delete an inactive endpoint from the app where its MultiplexChannel lives. */
+  async function deleteInactiveEndpoint(endpoint: InactiveStreamEndpoint): Promise<boolean> {
+    const success = endpoint.type === 'public'
+      ? await omeApi.makeStreamPrivate(endpoint.channelName)
+      : await omeApi.removeUnlistedStream(endpoint.channelName)
+
     if (success) {
-      publicStreamNames.value.delete(streamName)
-      streams.value = streams.value.filter(s => !(s.name === streamName && s.isOrphaned))
+      inactiveEndpoints.value = inactiveEndpoints.value.filter(candidate =>
+        candidate.type !== endpoint.type || candidate.channelName !== endpoint.channelName
+      )
+
+      if (endpoint.type === 'public') {
+        publicStreamNames.value.delete(endpoint.channelName)
+      } else if (endpoint.sourceStreamName) {
+        removeUnlistedChannelFromState(endpoint.sourceStreamName, endpoint.channelName)
+      }
     }
     return success
   }
@@ -322,7 +340,8 @@ export const useStreamStore = defineStore('streams', () => {
     const channelName = buildUnlistedChannelName(streamName, secret)
     const success = await omeApi.makeStreamUnlisted(streamName, channelName)
     if (success) {
-      unlistedChannelNames.value.set(streamName, channelName)
+      const channels = unlistedChannelNames.value.get(streamName) ?? []
+      unlistedChannelNames.value.set(streamName, [...channels, channelName])
       const stream = streams.value.find(s => s.name === streamName)
       if (stream) {
         stream.isUnlisted = true
@@ -337,25 +356,29 @@ export const useStreamStore = defineStore('streams', () => {
    * Remove the unlisted share link for a stream.
    */
   async function removeUnlistedStream(streamName: string): Promise<boolean> {
-    const channelName = unlistedChannelNames.value.get(streamName)
-    if (!channelName) return false
-    const success = await omeApi.removeUnlistedStream(channelName)
-    if (success) {
-      unlistedChannelNames.value.delete(streamName)
-      const stream = streams.value.find(s => s.name === streamName)
-      if (stream) {
-        stream.isUnlisted = false
-        stream.unlistedChannelName = undefined
+    const channels = unlistedChannelNames.value.get(streamName) ?? []
+    if (channels.length === 0) return false
+
+    const results = await Promise.all(channels.map(async channelName => ({
+      channelName,
+      success: await omeApi.removeUnlistedStream(channelName),
+    })))
+
+    for (const result of results) {
+      if (result.success) {
+        removeUnlistedChannelFromState(streamName, result.channelName)
       }
     }
-    return success
+
+    return results.every(result => result.success)
   }
 
   /**
    * Regenerate the unlisted secret (old link stops working, new link is returned).
    */
   async function regenerateUnlistedSecret(streamName: string): Promise<string | null> {
-    await removeUnlistedStream(streamName)
+    const removed = await removeUnlistedStream(streamName)
+    if (!removed) return null
     return makeStreamUnlisted(streamName)
   }
 
@@ -363,8 +386,29 @@ export const useStreamStore = defineStore('streams', () => {
    * Get the share URL for an unlisted stream (if it exists).
    */
   function getUnlistedShareUrl(streamName: string): string | null {
-    const channelName = unlistedChannelNames.value.get(streamName)
+    const channelName = getLastChannel(unlistedChannelNames.value.get(streamName))
     return channelName ? buildShareUrl(channelName) : null
+  }
+
+  function removeUnlistedChannelFromState(streamName: string, channelName: string) {
+    const remainingChannels = (unlistedChannelNames.value.get(streamName) ?? [])
+      .filter(candidate => candidate !== channelName)
+
+    if (remainingChannels.length > 0) {
+      unlistedChannelNames.value.set(streamName, remainingChannels)
+    } else {
+      unlistedChannelNames.value.delete(streamName)
+    }
+
+    const stream = streams.value.find(candidate => candidate.name === streamName)
+    if (stream) {
+      stream.isUnlisted = remainingChannels.length > 0
+      stream.unlistedChannelName = getLastChannel(remainingChannels)
+    }
+  }
+
+  function getLastChannel(channels?: string[]): string | undefined {
+    return channels?.[channels.length - 1]
   }
 
   // Helper function to calculate total viewer count from connections
@@ -407,12 +451,12 @@ export const useStreamStore = defineStore('streams', () => {
     error,
     publicStreamNames,
     unlistedChannelNames,
+    inactiveEndpoints,
     // Getters
     activeStream,
     liveStreams,
     publicLiveStreams,
     visibleStreams,
-    orphanedStreams,
     unlistedStreams,
     totalViewers,
     // Actions
@@ -422,7 +466,7 @@ export const useStreamStore = defineStore('streams', () => {
     clearActiveStream,
     makeStreamPublic,
     makeStreamPrivate,
-    deleteOrphanedStream,
+    deleteInactiveEndpoint,
     isStreamPublic,
     makeStreamUnlisted,
     removeUnlistedStream,
