@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  vite: npm:rolldown-vite@7.3.1
-
 importers:
 
   .:
@@ -16,7 +13,7 @@ importers:
         version: 7.4.47
       axios:
         specifier: ^1.20.0
-        version: 1.20.0
+        version: 1.20.0(debug@4.4.3)
       hls.js:
         specifier: ^1.7.3
         version: 1.7.3
@@ -31,20 +28,20 @@ importers:
         version: 3.5.43(typescript@5.9.3)
       vue-router:
         specifier: ^5.3.1
-        version: 5.3.1(@vue/compiler-sfc@3.5.43)(pinia@4.0.3(@vue/devtools-api@8.2.1)(typescript@5.9.3)(vue@3.5.43(typescript@5.9.3)))(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))
+        version: 5.3.1(@vue/compiler-sfc@3.5.43)(pinia@4.0.3(@vue/devtools-api@8.2.1)(typescript@5.9.3)(vue@3.5.43(typescript@5.9.3)))(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))
       vuetify:
         specifier: ^4.2.1
         version: 4.2.1(typescript@5.9.3)(vite-plugin-vuetify@2.1.3)(vue@3.5.43(typescript@5.9.3))
     devDependencies:
       '@types/node':
-        specifier: ^26.6.2
-        version: 26.6.2
+        specifier: ^26.6.3
+        version: 26.6.3
       '@types/ovenplayer':
         specifier: ^0.10.13
         version: 0.10.13
       '@vitejs/plugin-vue':
         specifier: ^6.0.9
-        version: 6.0.9(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))
+        version: 6.0.9(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))
       '@vitest/ui':
         specifier: ^5.0.1
         version: 5.0.1(vitest@5.0.1)
@@ -68,13 +65,13 @@ importers:
         version: 5.9.3
       vite:
         specifier: npm:rolldown-vite@7.3.1
-        version: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)
+        version: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)
       vite-plugin-vuetify:
         specifier: ^2.1.3
-        version: 2.1.3(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))(vuetify@4.2.1)
+        version: 2.1.3(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))(vuetify@4.2.1)
       vitest:
         specifier: ^5.0.1
-        version: 5.0.1(@types/node@26.6.2)(@vitest/ui@5.0.1)(happy-dom@20.14.5)(jsdom@30.1.0)(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))
+        version: 5.0.1(@types/node@26.6.3)(@vitest/ui@5.0.1)(happy-dom@20.14.5)(jsdom@30.1.0)(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))
       vue-tsc:
         specifier: ^3.3.11
         version: 3.3.11(typescript@5.9.3)
@@ -384,8 +381,8 @@ packages:
   '@types/estree@1.0.9':
     resolution: {integrity: sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==}
 
-  '@types/node@26.6.2':
-    resolution: {integrity: sha512-X1P21scMv4zGKLYqjdGjaKa7COa0RKVYYZZN/NfvLQ1JegxFhdhpZG/Lyn8AXx6CDUavKAd11v6BvfpkDByK8g==}
+  '@types/node@26.6.3':
+    resolution: {integrity: sha512-dsqMQQoeTLqu9wynDD00q573mNzso3IdQOAfHRJqLCcmCFPoGo9A1bDpUcv/9tnKpErQWv9uKeGfl37EIS02Yg==}
 
   '@types/ovenplayer@0.10.13':
     resolution: {integrity: sha512-XunTSipcr/JdcKDqjXwiJdYFGWZYurdk7P4zs8Oelc5Px7ImctKs9DbzFV8Ae2i5M0IWAwJFM6sKJGGCqVFnYQ==}
@@ -436,6 +433,11 @@ packages:
 
   '@volar/typescript@2.4.28':
     resolution: {integrity: sha512-Ja6yvWrbis2QtN4ClAKreeUZPVYMARDYZl9LMEv1iQ1QdepB6wn0jTRxA9MftYmYa4DQ4k/DaSZpFPUfxl8giw==}
+    peerDependencies:
+      typescript: '*'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   '@vue-macros/common@3.1.4':
     resolution: {integrity: sha512-/5Fv+6DgIcM9ajY05ZmKBv+LMX1M9A0X+IUwDRVdt67ciw8OV9bvG2r34p3RiEadlsQybjhKPRKNXDC8Bp23cw==}
@@ -1610,7 +1612,7 @@ snapshots:
 
   '@types/estree@1.0.9': {}
 
-  '@types/node@26.6.2':
+  '@types/node@26.6.3':
     dependencies:
       undici-types: 8.9.0
 
@@ -1620,22 +1622,22 @@ snapshots:
 
   '@types/ws@8.18.1':
     dependencies:
-      '@types/node': 26.6.2
+      '@types/node': 26.6.3
 
-  '@vitejs/plugin-vue@6.0.9(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))':
+  '@vitejs/plugin-vue@6.0.9(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
-      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)
+      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)
       vue: 3.5.43(typescript@5.9.3)
 
-  '@vitest/mocker@5.0.1(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))':
+  '@vitest/mocker@5.0.1(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.0.1
       estree-walker: 3.0.3
       magic-string: 1.4.1
     optionalDependencies:
-      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)
+      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)
 
   '@vitest/pretty-format@5.0.1':
     dependencies:
@@ -1651,7 +1653,7 @@ snapshots:
       pathe: 2.0.3
       sirv: 3.0.2
       tinyrainbow: 3.1.1
-      vitest: 5.0.1(@types/node@26.6.2)(@vitest/ui@5.0.1)(happy-dom@20.14.5)(jsdom@30.1.0)(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))
+      vitest: 5.0.1(@types/node@26.6.3)(@vitest/ui@5.0.1)(happy-dom@20.14.5)(jsdom@30.1.0)(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))
 
   '@vitest/utils@5.0.1':
     dependencies:
@@ -1665,11 +1667,13 @@ snapshots:
 
   '@volar/source-map@2.4.28': {}
 
-  '@volar/typescript@2.4.28':
+  '@volar/typescript@2.4.28(typescript@5.9.3)':
     dependencies:
       '@volar/language-core': 2.4.28
       path-browserify: 1.0.1
       vscode-uri: 3.2.0
+    optionalDependencies:
+      typescript: 5.9.3
 
   '@vue-macros/common@3.1.4(vue@3.5.43(typescript@5.9.3))':
     dependencies:
@@ -1809,9 +1813,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.20.0:
+  axios@1.20.0(debug@4.4.3):
     dependencies:
-      follow-redirects: 1.16.0
+      follow-redirects: 1.16.0(debug@4.4.3)
       form-data: 4.0.6
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -1833,7 +1837,7 @@ snapshots:
 
   buffer-image-size@0.6.4:
     dependencies:
-      '@types/node': 26.6.2
+      '@types/node': 26.6.3
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
@@ -1941,7 +1945,9 @@ snapshots:
 
   flatted@3.4.4: {}
 
-  follow-redirects@1.16.0: {}
+  follow-redirects@1.16.0(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3
 
   form-data@4.0.6:
     dependencies:
@@ -1984,7 +1990,7 @@ snapshots:
 
   happy-dom@20.14.5:
     dependencies:
-      '@types/node': 26.6.2
+      '@types/node': 26.6.3
       '@types/whatwg-mimetype': 3.0.2
       '@types/ws': 8.18.1
       buffer-image-size: 0.6.4
@@ -2241,7 +2247,7 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2):
+  rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2):
     dependencies:
       '@oxc-project/runtime': 0.101.0
       fdir: 6.5.0(picomatch@4.0.7)
@@ -2251,7 +2257,7 @@ snapshots:
       rolldown: 1.0.0-beta.53(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)
       tinyglobby: 0.2.17
     optionalDependencies:
-      '@types/node': 26.6.2
+      '@types/node': 26.6.3
       fsevents: 2.3.3
       sass: 1.104.1
       yaml: 2.8.2
@@ -2354,31 +2360,31 @@ snapshots:
       pathe: 2.0.3
       picomatch: 4.0.7
 
-  unplugin@3.4.0(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)):
+  unplugin@3.4.0(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)):
     dependencies:
       '@jridgewell/remapping': 2.3.5
       picomatch: 4.0.7
       webpack-virtual-modules: 0.6.2
     optionalDependencies:
-      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)
+      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)
 
   upath@2.0.1: {}
 
-  vite-plugin-vuetify@2.1.3(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))(vuetify@4.2.1):
+  vite-plugin-vuetify@2.1.3(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))(vuetify@4.2.1):
     dependencies:
       '@vuetify/loader-shared': 2.1.2(vue@3.5.43(typescript@5.9.3))(vuetify@4.2.1)
       debug: 4.4.3
       upath: 2.0.1
-      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)
+      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)
       vue: 3.5.43(typescript@5.9.3)
       vuetify: 4.2.1(typescript@5.9.3)(vite-plugin-vuetify@2.1.3)(vue@3.5.43(typescript@5.9.3))
     transitivePeerDependencies:
       - supports-color
 
-  vitest@5.0.1(@types/node@26.6.2)(@vitest/ui@5.0.1)(happy-dom@20.14.5)(jsdom@30.1.0)(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)):
+  vitest@5.0.1(@types/node@26.6.3)(@vitest/ui@5.0.1)(happy-dom@20.14.5)(jsdom@30.1.0)(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.1(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))
+      '@vitest/mocker': 5.0.1(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))
       chai: 6.2.2
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -2389,10 +2395,10 @@ snapshots:
       tinybench: 6.1.4
       tinyexec: 1.3.0
       tinyglobby: 0.2.17
-      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)
+      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 26.6.2
+      '@types/node': 26.6.3
       '@vitest/ui': 5.0.1(vitest@5.0.1)
       happy-dom: 20.14.5
       jsdom: 30.1.0
@@ -2403,7 +2409,7 @@ snapshots:
 
   vue-component-type-helpers@3.3.11: {}
 
-  vue-router@5.3.1(@vue/compiler-sfc@3.5.43)(pinia@4.0.3(@vue/devtools-api@8.2.1)(typescript@5.9.3)(vue@3.5.43(typescript@5.9.3)))(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3)):
+  vue-router@5.3.1(@vue/compiler-sfc@3.5.43)(pinia@4.0.3(@vue/devtools-api@8.2.1)(typescript@5.9.3)(vue@3.5.43(typescript@5.9.3)))(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3)):
     dependencies:
       '@vue-macros/common': 3.1.4(vue@3.5.43(typescript@5.9.3))
       '@vue/devtools-api': 8.2.1
@@ -2419,13 +2425,13 @@ snapshots:
       picomatch: 4.0.7
       scule: 1.3.0
       tinyglobby: 0.2.17
-      unplugin: 3.4.0(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))
+      unplugin: 3.4.0(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))
       unplugin-utils: 0.3.2
       vue: 3.5.43(typescript@5.9.3)
     optionalDependencies:
       '@vue/compiler-sfc': 3.5.43
       pinia: 4.0.3(@vue/devtools-api@8.2.1)(typescript@5.9.3)(vue@3.5.43(typescript@5.9.3))
-      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2)
+      vite: rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2)
     transitivePeerDependencies:
       - '@farmfe/core'
       - '@rsbuild/core'
@@ -2439,7 +2445,7 @@ snapshots:
 
   vue-tsc@3.3.11(typescript@5.9.3):
     dependencies:
-      '@volar/typescript': 2.4.28
+      '@volar/typescript': 2.4.28(typescript@5.9.3)
       '@vue/language-core': 3.3.11
       typescript: 5.9.3
 
@@ -2459,7 +2465,7 @@ snapshots:
       vue: 3.5.43(typescript@5.9.3)
     optionalDependencies:
       typescript: 5.9.3
-      vite-plugin-vuetify: 2.1.3(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.2)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))(vuetify@4.2.1)
+      vite-plugin-vuetify: 2.1.3(rolldown-vite@7.3.1(@emnapi/core@1.8.1)(@emnapi/runtime@1.8.1)(@types/node@26.6.3)(sass@1.104.1)(yaml@2.8.2))(vue@3.5.43(typescript@5.9.3))(vuetify@4.2.1)
     transitivePeerDependencies:
       - '@adobe/leonardo-contrast-colors'
       - '@ant-design/colors'
