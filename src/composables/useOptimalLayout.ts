@@ -1,521 +1,210 @@
-import { ref, computed, onMounted, onUnmounted, type Ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, type Ref } from 'vue'
 
-interface Stream {
+export interface LayoutStream {
   name: string
   width?: number
   height?: number
   aspectRatio?: number
 }
 
-interface GridConfig {
-  rows: number
-  cols: number
+const DEFAULT_ASPECT_RATIO = 16 / 9
+export const LAYOUT_GAP = 2
+export const LAYOUT_BORDER = 1
+
+function positive(value: number | undefined): value is number {
+  return value !== undefined && Number.isFinite(value) && value > 0
 }
 
-interface StreamLayout {
+export function streamAspectRatio(stream: LayoutStream): number {
+  if (positive(stream.aspectRatio)) return stream.aspectRatio
+  const ratio = positive(stream.width) && positive(stream.height)
+    ? stream.width / stream.height : DEFAULT_ASPECT_RATIO
+  return positive(ratio) ? ratio : DEFAULT_ASPECT_RATIO
+}
+
+function dimension(value: number) {
+  return Number.isFinite(value) ? Math.max(0, value) : 0
+}
+
+export interface StreamLayout {
   streamIndex: number
+  x: number
+  y: number
+  cellWidth: number
+  cellHeight: number
   width: number
   height: number
-  gridRow: number
-  gridCol: number
 }
 
-interface LayoutResult {
-  gridConfig: GridConfig
-  streamLayouts: StreamLayout[]
-  totalPixels: number
-  colWidths: number[]
-  rowHeights: number[]
-  cellWidths: number[]  // Added: actual CSS grid cell widths
-  cellHeights: number[] // Added: actual CSS grid cell heights
-  screenUtilization: number // Added: percentage of screen filled by actual video content
+function fit(aspect: number, width: number, height: number) {
+  const fittedWidth = Math.min(width, height * aspect)
+  return { width: fittedWidth, height: Math.min(height, fittedWidth / aspect) }
 }
 
-const DEFAULT_ASPECT_RATIO = 16 / 9
+/** Equal priorities with diminishing returns. Zero-area videos cannot be omitted
+ * to improve the score. Logs of dimensions avoid area underflow/overflow. */
+export function scoreVideoAreas(videos: { width: number, height: number }[]): number {
+  return videos.reduce((score, video) => score + Math.log(video.width) + Math.log(video.height), 0)
+}
 
-/**
- * Calculates the optimal grid layout to maximize total video pixels displayed
- * while maintaining each stream's individual aspect ratio
- */
-export function useOptimalLayout(streams: Ref<Stream[]>) {
-  const containerWidth = ref(window.innerWidth)
-  const containerHeight = ref(window.innerHeight)
+// All contiguous partitions for normal multiview counts. Above ten streams,
+// use balanced shelves of every possible capacity to bound the search cost.
+function partitions(count: number): number[][] {
+  if (count <= 10) {
+    const result: number[][] = []
+    for (let mask = 0; mask < 2 ** (count - 1); mask++) {
+      const groups = [1]
+      for (let i = 1; i < count; i++) {
+        if (mask & (1 << (i - 1))) groups.push(1)
+        else groups[groups.length - 1]!++
+      }
+      result.push(groups)
+    }
+    return result
+  }
+  const result: number[][] = []
+  for (let capacity = 1; capacity <= count; capacity++) {
+    const groups = Array.from({ length: Math.ceil(count / capacity) }, (_, i) => Math.min(capacity, count - i * capacity))
+    result.push(groups, [...groups].reverse())
+  }
+  return result
+}
 
-  // Calculate optimal layout based on current streams and container size
-  const optimalLayout = computed(() => {
-    return calculateOptimalLayout(
-      streams.value,
-      containerWidth.value,
-      containerHeight.value
-    )
-  })
+// Maximize sum(count * log(height)) with positive heights, fixed total budget
+// and per-shelf caps. Capped shelves release their surplus to the others.
+function shelfHeights(counts: number[], caps: number[], budget: number): number[] {
+  const heights = caps.map(() => 0)
+  let active = counts.map((_, i) => i)
+  let remaining = budget
+  while (active.length) {
+    const weight = active.reduce((sum, i) => sum + counts[i]!, 0)
+    const capped = active.filter(i => caps[i]! <= remaining * counts[i]! / weight)
+    if (!capped.length) {
+      for (const i of active) heights[i] = remaining * counts[i]! / weight
+      break
+    }
+    for (const i of capped) {
+      heights[i] = caps[i]!
+      remaining = Math.max(0, remaining - heights[i]!)
+    }
+    const removed = new Set(capped)
+    active = active.filter(i => !removed.has(i))
+  }
+  return heights
+}
 
-  // Get individual stream styles
-  const streamStyles = computed(() => {
-    return optimalLayout.value.streamLayouts.map(layout => ({
-      gridRow: layout.gridRow,
-      gridColumn: layout.gridCol,
-    }))
-  })
+/** Search aspect-preserving shelves in both orientations. This is a bounded
+ * packing heuristic, not a globally optimal arbitrary-rectangle solver. */
+export function calculateOptimalLayout(streams: LayoutStream[], width: number, height: number) {
+  width = dimension(width)
+  height = dimension(height)
+  const aspects = streams.map(streamAspectRatio)
+  const count = streams.length
+  // Leave content space even when the container is smaller than decoration.
+  const border = Math.min(LAYOUT_BORDER, width / (4 * Math.max(1, count)), height / (4 * Math.max(1, count)))
+  const gap = Math.min(LAYOUT_GAP, border * 2)
+  type Candidate = { streamLayouts: StreamLayout[], score: number, totalPixels: number }
+  let best: Candidate = { streamLayouts: [], score: -Infinity, totalPixels: 0 }
 
-  // Grid template for the container - uses actual cell dimensions for CSS grid
-  const gridTemplateColumns = computed(() => {
-    const { cellWidths } = optimalLayout.value
-    if (cellWidths.length === 0) return '1fr'
-    return cellWidths.map(w => `${w}px`).join(' ')
-  })
-
-  const gridTemplateRows = computed(() => {
-    const { cellHeights } = optimalLayout.value
-    if (cellHeights.length === 0) return '1fr'
-    return cellHeights.map(h => `${h}px`).join(' ')
-  })
-
-  // Handle window resize
-  function updateContainerSize() {
-    containerWidth.value = window.innerWidth
-    containerHeight.value = window.innerHeight
+  function consider(streamLayouts: StreamLayout[]) {
+    const score = scoreVideoAreas(streamLayouts)
+    const totalPixels = streamLayouts.reduce((sum, video) => sum + video.width * video.height, 0)
+    if (!best.streamLayouts.length || score > best.score + 1e-9 ||
+      ((score === best.score || Math.abs(score - best.score) <= 1e-9) && totalPixels > best.totalPixels)) {
+      best = { streamLayouts, score, totalPixels }
+    }
   }
 
+  // Keep equal-cell grids as a fairness baseline alongside flexible shelves.
+  for (let cols = 1; cols <= count; cols++) {
+    const rows = Math.ceil(count / cols)
+    const cellWidth = Math.max(0, (width - (cols - 1) * gap) / cols)
+    const cellHeight = Math.max(0, (height - (rows - 1) * gap) / rows)
+    consider(aspects.map((aspect, streamIndex) => ({
+      streamIndex, x: (streamIndex % cols) * (cellWidth + gap),
+      y: Math.floor(streamIndex / cols) * (cellHeight + gap), cellWidth, cellHeight,
+      ...fit(aspect, Math.max(0, cellWidth - 2 * border), Math.max(0, cellHeight - 2 * border)),
+    })))
+  }
+
+  for (const transposed of [false, true]) {
+    const across = transposed ? height : width
+    const down = transposed ? width : height
+    // Extreme metadata only affects candidate preferences here. The final fit
+    // below always uses the original aspect ratio, without stretching it.
+    const ratios = aspects.map(ar => Math.max(1e-12, Math.min(1e12, transposed ? 1 / ar : ar)))
+    for (const groups of count ? partitions(count) : []) {
+      let offset = 0
+      const shelves = groups.map(size => {
+        const start = offset
+        offset += size
+        const ratioSum = ratios.slice(start, offset).reduce((sum, ar) => sum + ar, 0)
+        const budget = Math.max(0, across - size * 2 * border - (size - 1) * gap)
+        return { start, size, cap: budget / ratioSum }
+      })
+      const contentBudget = Math.max(0, down - groups.length * 2 * border - (groups.length - 1) * gap)
+      const heights = shelfHeights(groups, shelves.map(shelf => shelf.cap), contentBudget)
+      const usedHeight = heights.reduce((sum, h) => sum + h + 2 * border, 0) + (groups.length - 1) * gap
+      let y = Math.max(0, (down - usedHeight) / 2)
+      const videos: StreamLayout[] = []
+      shelves.forEach((shelf, row) => {
+        const h = heights[row]!
+        const widths = ratios.slice(shelf.start, shelf.start + shelf.size).map(ar => ar * h + 2 * border)
+        const usedWidth = widths.reduce((sum, w) => sum + w, 0) + (shelf.size - 1) * gap
+        let x = Math.max(0, (across - usedWidth) / 2)
+        widths.forEach((w, col) => {
+          const streamIndex = shelf.start + col
+          // Clamp numerical roundoff at the container edge.
+          const cw = Math.max(0, Math.min(w, across - x))
+          const ch = Math.max(0, Math.min(h + 2 * border, down - y))
+          const cellWidth = transposed ? ch : cw
+          const cellHeight = transposed ? cw : ch
+          videos.push({ streamIndex, x: transposed ? y : x, y: transposed ? x : y, cellWidth, cellHeight,
+            ...fit(aspects[streamIndex]!, Math.max(0, cellWidth - 2 * border), Math.max(0, cellHeight - 2 * border)) })
+          x += w + gap
+        })
+        y += h + 2 * border + gap
+      })
+      consider(videos)
+    }
+  }
+  return { ...best, score: count ? best.score : 0, border, gap,
+    screenUtilization: width > 0 && height > 0 ? best.totalPixels / width / height : 0 }
+}
+
+export function useOptimalLayout(streams: Ref<LayoutStream[]>, container?: Ref<HTMLElement | null>) {
+  const containerWidth = ref(typeof window === 'undefined' ? 0 : window.innerWidth)
+  const containerHeight = ref(typeof window === 'undefined' ? 0 : window.innerHeight)
+  function measure() {
+    const element = container?.value
+    containerWidth.value = element ? element.clientWidth : window.innerWidth
+    containerHeight.value = element ? element.clientHeight : window.innerHeight
+  }
+  let observer: ResizeObserver | undefined
+  let stopWatching: (() => void) | undefined
   onMounted(() => {
-    window.addEventListener('resize', updateContainerSize)
+    window.addEventListener('resize', measure)
+    if (container) {
+      stopWatching = watch(container, element => {
+        observer?.disconnect()
+        measure()
+        if (element && typeof ResizeObserver !== 'undefined') {
+          observer = new ResizeObserver(measure)
+          observer.observe(element)
+        }
+      }, { immediate: true, flush: 'post' })
+    } else measure()
   })
-
   onUnmounted(() => {
-    window.removeEventListener('resize', updateContainerSize)
+    window.removeEventListener('resize', measure)
+    stopWatching?.()
+    observer?.disconnect()
   })
-
-  return {
-    optimalLayout,
-    streamStyles,
-    gridTemplateColumns,
-    gridTemplateRows,
-    containerWidth,
-    containerHeight,
-  }
-}
-
-/**
- * Core algorithm: finds the grid configuration that maximizes total video pixels
- */
-function calculateOptimalLayout(
-  streams: Stream[],
-  containerWidth: number,
-  containerHeight: number
-): LayoutResult {
-  const streamCount = streams.length
-
-  if (streamCount === 0) {
-    return {
-      gridConfig: { rows: 1, cols: 1 },
-      streamLayouts: [],
-      totalPixels: 0,
-      colWidths: [],
-      rowHeights: [],
-      cellWidths: [],
-      cellHeights: [],
-      screenUtilization: 0,
-    }
-  }
-
-  // Get aspect ratios for all streams
-  const aspectRatios = streams.map(stream => 
-    stream.aspectRatio ?? 
-    (stream.width && stream.height ? stream.width / stream.height : DEFAULT_ASPECT_RATIO)
-  )
-
-  let bestLayout: LayoutResult | null = null
-
-  // Try all reasonable grid configurations
-  const possibleConfigs = generateGridConfigs(streamCount)
-
-  for (const config of possibleConfigs) {
-    const layout = evaluateGridConfig(
-      config,
-      aspectRatios,
-      containerWidth,
-      containerHeight
-    )
-
-    if (!bestLayout) {
-      bestLayout = layout
-    } else {
-      // Calculate how many empty cells each grid has
-      const currentEmpty = (config.rows * config.cols) - streamCount
-      const bestEmpty = (bestLayout.gridConfig.rows * bestLayout.gridConfig.cols) - streamCount
-      
-      // Primary metric: screen utilization (percentage of screen filled with video)
-      const utilizationDiff = layout.screenUtilization - bestLayout.screenUtilization
-      const utilizationThreshold = 0.02 // 2% threshold
-      
-      // If screen utilization is significantly better (>2%), prefer it
-      if (utilizationDiff > utilizationThreshold) {
-        bestLayout = layout
-        continue
-      } else if (utilizationDiff < -utilizationThreshold) {
-        // Current is significantly worse, skip it
-        continue
-      }
-      
-      // Utilization is similar (within 2%) - apply tiebreakers
-      // 1st tiebreaker: prefer fewer empty cells
-      if (currentEmpty < bestEmpty) {
-        bestLayout = layout
-        continue
-      } else if (currentEmpty > bestEmpty) {
-        continue
-      }
-      
-      // 2nd tiebreaker: prefer more balanced (square-ish) grids
-      const currentBalance = Math.abs(config.rows - config.cols)
-      const bestBalance = Math.abs(bestLayout.gridConfig.rows - bestLayout.gridConfig.cols)
-      
-      if (currentBalance < bestBalance) {
-        bestLayout = layout
-      } else if (currentBalance === bestBalance) {
-        // 3rd tiebreaker: prefer higher total pixels (edge case)
-        if (layout.totalPixels > bestLayout.totalPixels) {
-          bestLayout = layout
-        }
-      }
-    }
-  }
-
-  return bestLayout!
-}
-
-/**
- * Generates all reasonable grid configurations for a given number of streams
- */
-function generateGridConfigs(streamCount: number): GridConfig[] {
-  const configs: GridConfig[] = []
-
-  // Try all combinations where rows * cols >= streamCount
-  // Limit to reasonable sizes (e.g., max 10 rows/cols)
-  const maxDimension = Math.min(10, streamCount)
-
-  for (let rows = 1; rows <= maxDimension; rows++) {
-    for (let cols = 1; cols <= maxDimension; cols++) {
-      if (rows * cols >= streamCount) {
-        configs.push({ rows, cols })
-      }
-    }
-  }
-
-  return configs
-}
-
-/**
- * Evaluates a specific grid configuration and calculates total pixels
- * Uses smart scaling to maximize space utilization
- */
-function evaluateGridConfig(
-  config: GridConfig,
-  aspectRatios: number[],
-  containerWidth: number,
-  containerHeight: number
-): LayoutResult {
-  const { rows, cols } = config
-  const streamCount = aspectRatios.length
-
-  const GAP_SIZE = 2
-  const BORDER_SIZE = 2
-
-  const horizontalSpacing = Math.max(cols - 1, 0) * GAP_SIZE + cols * BORDER_SIZE
-  const verticalSpacing = Math.max(rows - 1, 0) * GAP_SIZE + rows * BORDER_SIZE
-
-  const availableWidth = Math.max(containerWidth - horizontalSpacing, 0)
-  const availableHeight = Math.max(containerHeight - verticalSpacing, 0)
-
-  const cellWidth = cols > 0 ? availableWidth / cols : 0
-  const cellHeight = rows > 0 ? availableHeight / rows : 0
-
-  const rowHeights = Array.from({ length: rows }, () => 0)
-  const colWidths = Array.from({ length: cols }, () => 0)
-
-  for (let i = 0; i < streamCount; i++) {
-    const aspectRatio = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-    const row = Math.floor(i / cols)
-    const col = i % cols
-
-    const fitted = fitWithinBounds(aspectRatio, cellWidth, cellHeight)
-
-    if (row < rowHeights.length) {
-      const currentHeight = rowHeights[row] ?? 0
-      rowHeights[row] = Math.max(currentHeight, fitted.height)
-    }
-    if (col < colWidths.length) {
-      const currentWidth = colWidths[col] ?? 0
-      colWidths[col] = Math.max(currentWidth, fitted.width)
-    }
-  }
-
-  const scaled = scaleDimensions(colWidths, rowHeights, availableWidth, availableHeight)
-
-  // Check if all streams have identical aspect ratios
-  const hasIdenticalAspectRatios = aspectRatios.every((ar, idx) => 
-    idx === 0 || Math.abs(ar - aspectRatios[0]!) < 0.01
-  )
-
-  // For identical aspect ratios, skip complex redistribution and just use cell dimensions
-  // This ensures streams properly fill their cells in balanced grids
-  let redistributed: { colWidths: number[], rowHeights: number[] }
-  
-  if (hasIdenticalAspectRatios) {
-    redistributed = {
-      colWidths: Array.from({ length: cols }, () => cellWidth),
-      rowHeights: Array.from({ length: rows }, () => cellHeight),
-    }
-  } else if (rows === 1) {
-    // For single-row layouts with mixed aspects, use the existing redistribution logic
-    redistributed = redistributeSpace({
-      colWidths: scaled.colWidths,
-      rowHeights: scaled.rowHeights,
-      availableWidth,
-      availableHeight,
-      aspectRatios,
-      cols,
-    })
-  } else {
-    // For multi-row layouts with mixed aspects, calculate optimal column widths per row
-    // This gives much better space utilization than the old single-row assumption
-    const finalColWidths = Array.from({ length: cols }, () => 0)
-    const finalRowHeights = Array.from({ length: rows }, () => 0)
-    
-    for (let row = 0; row < rows; row++) {
-      const rowStartIdx = row * cols
-      const rowEndIdx = Math.min(rowStartIdx + cols, streamCount)
-      const rowStreamCount = rowEndIdx - rowStartIdx
-      const rowAspectRatios = aspectRatios.slice(rowStartIdx, rowEndIdx)
-      
-      // Calculate ideal heights that would allow streams to fill available width
-      const totalAspectRatio = rowAspectRatios.reduce((sum, ar) => sum + ar, 0)
-      const idealRowHeight = totalAspectRatio > 0 ? availableWidth / totalAspectRatio : cellHeight
-      
-      // Calculate stream widths at this height
-      const rowStreamWidths = rowAspectRatios.map(ar => idealRowHeight * ar)
-      
-      // Check if they fit within available height
-      const fitsHeight = idealRowHeight <= availableHeight / rows
-      
-      if (fitsHeight) {
-        // Use ideal height - streams will fill width
-        finalRowHeights[row] = idealRowHeight
-        
-        // Distribute widths to columns (each stream in this row gets its proportional width)
-        for (let col = 0; col < rowStreamCount; col++) {
-          finalColWidths[col] = Math.max(finalColWidths[col] ?? 0, rowStreamWidths[col] ?? 0)
-        }
-      } else {
-        // Height-constrained: use equal cell height and fit streams within cells
-        const rowCellHeight = availableHeight / rows
-        finalRowHeights[row] = rowCellHeight
-        
-        for (let col = 0; col < rowStreamCount; col++) {
-          const streamIdx = rowStartIdx + col
-          const ar = aspectRatios[streamIdx] ?? DEFAULT_ASPECT_RATIO
-          const streamWidth = rowCellHeight * ar
-          finalColWidths[col] = Math.max(finalColWidths[col] ?? 0, streamWidth)
-        }
-      }
-    }
-    
-    redistributed = {
-      colWidths: finalColWidths,
-      rowHeights: finalRowHeights,
-    }
-  }
-
-  // For CSS grid: use equal cell widths for identical aspect ratios, redistributed widths for mixed
-  const gridCellWidths = hasIdenticalAspectRatios 
-    ? Array.from({ length: cols }, () => cellWidth)
-    : redistributed.colWidths
-  
-  const gridCellHeights = hasIdenticalAspectRatios
-    ? Array.from({ length: rows }, () => cellHeight)
-    : redistributed.rowHeights
-
-  const streamLayouts: StreamLayout[] = []
-  let totalPixels = 0
-
-  for (let i = 0; i < streamCount; i++) {
-    const aspectRatio = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-    const row = Math.floor(i / cols)
-    const col = i % cols
-
-    const targetWidth = redistributed.colWidths[col] ?? 0
-    const targetHeight = redistributed.rowHeights[row] ?? 0
-
-    const { width, height } = fitWithinBounds(aspectRatio, targetWidth, targetHeight)
-
-    streamLayouts.push({
-      streamIndex: i,
-      width,
-      height,
-      gridRow: row + 1,
-      gridCol: col + 1,
-    })
-
-    totalPixels += width * height
-  }
-
-  // Calculate screen utilization: what percentage of the container is filled with actual video content
-  const containerArea = containerWidth * containerHeight
-  const screenUtilization = containerArea > 0 ? totalPixels / containerArea : 0
-
-  return {
-    gridConfig: config,
-    streamLayouts,
-    totalPixels,
-    colWidths: redistributed.colWidths,
-    rowHeights: redistributed.rowHeights,
-    cellWidths: gridCellWidths,
-    cellHeights: gridCellHeights,
-    screenUtilization,
-  }
-}
-
-function fitWithinBounds(aspectRatio: number, maxWidth: number, maxHeight: number) {
-  if (maxWidth <= 0 || maxHeight <= 0) {
-    return { width: 0, height: 0 }
-  }
-
-  const widthBasedHeight = maxWidth / aspectRatio
-
-  if (widthBasedHeight <= maxHeight) {
-    return { width: maxWidth, height: widthBasedHeight }
-  }
-
-  const heightBasedWidth = maxHeight * aspectRatio
-  return { width: heightBasedWidth, height: maxHeight }
-}
-
-function scaleDimensions(
-  colWidths: number[],
-  rowHeights: number[],
-  availableWidth: number,
-  availableHeight: number
-) {
-  const totalWidth = colWidths.reduce((sum, width) => sum + width, 0)
-  const totalHeight = rowHeights.reduce((sum, height) => sum + height, 0)
-
-  const widthScale = totalWidth > 0 ? availableWidth / totalWidth : 1
-  const heightScale = totalHeight > 0 ? availableHeight / totalHeight : 1
-  const scale = Math.min(widthScale, heightScale)
-
-  return {
-    colWidths: colWidths.map(width => width * scale),
-    rowHeights: rowHeights.map(height => height * scale),
-    widthScale,
-    heightScale,
-    scale,
-  }
-}
-
-interface RedistributionInput {
-  colWidths: number[]
-  rowHeights: number[]
-  availableWidth: number
-  availableHeight: number
-  aspectRatios: number[]
-  cols: number
-}
-
-function redistributeSpace({
-  colWidths,
-  rowHeights,
-  availableWidth,
-  availableHeight,
-  aspectRatios,
-  cols,
-}: RedistributionInput) {
-  const adjustedColWidths = [...colWidths]
-  const adjustedRowHeights = [...rowHeights]
-
-  const totalWidth = adjustedColWidths.reduce((sum, width) => sum + width, 0)
-  const totalHeight = adjustedRowHeights.reduce((sum, height) => sum + height, 0)
-
-  const widthLeftover = availableWidth - totalWidth
-  const heightLeftover = availableHeight - totalHeight
-
-  if (Math.abs(heightLeftover) < 1 && widthLeftover > 1) {
-    const baseRowHeight = adjustedRowHeights[0] ?? 0
-    if (baseRowHeight > 0) {
-      const exactStreamWidths = aspectRatios.map(aspect => baseRowHeight * (aspect ?? DEFAULT_ASPECT_RATIO))
-      const totalExactWidth = exactStreamWidths.reduce((sum, width) => sum + width, 0)
-      const unused = availableWidth - totalExactWidth
-
-      if (unused >= 0) {
-        if (unused > 0) {
-          const widestIdx = findWidestAspectIndex(aspectRatios)
-          exactStreamWidths[widestIdx] = (exactStreamWidths[widestIdx] ?? 0) + unused
-        }
-
-        const widthsByColumn = combineStreamsPerColumn(exactStreamWidths, cols)
-        widthsByColumn.forEach((width, index) => {
-          adjustedColWidths[index] = width
-        })
-      } else {
-        const aspectSum = aspectRatios.reduce(
-          (sum, aspect) => sum + (aspect ?? DEFAULT_ASPECT_RATIO),
-          0
-        )
-        const neededRowHeight = aspectSum > 0 ? availableWidth / aspectSum : baseRowHeight
-        adjustedRowHeights.fill(neededRowHeight)
-
-        const recalculatedWidths = aspectRatios.map(
-          aspect => neededRowHeight * (aspect ?? DEFAULT_ASPECT_RATIO)
-        )
-        const recalculatedTotal = recalculatedWidths.reduce((sum, width) => sum + width, 0)
-        const finalUnused = availableWidth - recalculatedTotal
-
-        if (Math.abs(finalUnused) > 0.1) {
-          const widestIdx = findWidestAspectIndex(aspectRatios)
-          recalculatedWidths[widestIdx] = (recalculatedWidths[widestIdx] ?? 0) + finalUnused
-        }
-
-        const widthsByColumn = combineStreamsPerColumn(recalculatedWidths, cols)
-        widthsByColumn.forEach((width, index) => {
-          adjustedColWidths[index] = width
-        })
-      }
-    }
-  } else if (Math.abs(widthLeftover) < 1 && heightLeftover > 1) {
-    const totalRowHeight = adjustedRowHeights.reduce((sum, height) => sum + height, 0)
-    const heightBoost = totalRowHeight > 0 ? availableHeight / totalRowHeight : 1
-    adjustedRowHeights.forEach((height, index) => {
-      adjustedRowHeights[index] = height * heightBoost
-    })
-  }
-
-  return {
-    colWidths: adjustedColWidths,
-    rowHeights: adjustedRowHeights,
-  }
-}
-
-function combineStreamsPerColumn(streamWidths: number[], cols: number) {
-  const widths = Array.from({ length: cols }, () => 0)
-  for (let i = 0; i < streamWidths.length; i++) {
-    const col = i % cols
-    const current = widths[col] ?? 0
-    const next = streamWidths[i] ?? 0
-    widths[col] = Math.max(current, next)
-  }
-  return widths
-}
-
-function findWidestAspectIndex(aspectRatios: number[]) {
-  let widestIdx = 0
-  let maxAspect = aspectRatios[0] ?? DEFAULT_ASPECT_RATIO
-
-  for (let i = 1; i < aspectRatios.length; i++) {
-    const aspect = aspectRatios[i] ?? DEFAULT_ASPECT_RATIO
-    if (aspect > maxAspect) {
-      maxAspect = aspect
-      widestIdx = i
-    }
-  }
-
-  return widestIdx
+  const optimalLayout = computed(() => calculateOptimalLayout(streams.value, containerWidth.value, containerHeight.value))
+  const streamStyles = computed(() => optimalLayout.value.streamLayouts.map(layout => ({
+    left: `${layout.x}px`, top: `${layout.y}px`,
+    width: `${layout.cellWidth}px`, height: `${layout.cellHeight}px`,
+    borderWidth: `${optimalLayout.value.border}px`,
+  })))
+  return { optimalLayout, streamStyles, containerWidth, containerHeight }
 }

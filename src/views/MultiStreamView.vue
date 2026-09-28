@@ -31,14 +31,11 @@
       </div>
     </transition>
 
-    <!-- Stream grid - optimal layout -->
+    <!-- Independently sized stream rectangles -->
     <div 
       v-if="selectedStreams.length > 0"
       class="streams-grid"
-      :style="{
-        gridTemplateColumns,
-        gridTemplateRows,
-      }"
+      ref="gridContainer"
     >
       <div
         v-for="(stream, index) in selectedStreams"
@@ -262,7 +259,8 @@ const selectedStreams = computed<StreamInfo[]>(() => {
   return streams.filter(stream => nameSet.has(stream.name))
 })
 
-const { gridTemplateColumns, gridTemplateRows, streamStyles } = useOptimalLayout(selectedStreams)
+const gridContainer = ref<HTMLElement | null>(null)
+const { streamStyles } = useOptimalLayout(selectedStreams, gridContainer)
 
 const sourcesCache = new Map<string, ReturnType<typeof generatePlaybackSources>>()
 let sourcesCacheAuthKey: string | null = null
@@ -560,23 +558,22 @@ function parseList(value: string) {
   color: #fff;
 }
 
-/* Grid layouts - optimal dynamic layout */
+/* Container measured by the layout composable. */
 .streams-grid {
-  display: grid;
-  gap: 2px;
+  position: relative;
   width: 100%;
   height: 100%;
   padding: 0;
   margin: 0;
   overflow: hidden;
-  justify-content: center;
-  align-content: center;
-  /* grid-template-columns and grid-template-rows set dynamically via :style */
 }
 
 /* Stream cell */
 .stream-cell {
-  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  position: absolute;
   width: 100%;
   height: 100%;
   overflow: hidden;
