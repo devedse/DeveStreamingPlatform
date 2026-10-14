@@ -25,7 +25,7 @@
   "devDependencies": {
     "@types/node": "^26.6.2",
     "@types/ovenplayer": "^0.10.13",
-    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitejs/plugin-vue": "^6.0.10",
     "@vitest/ui": "^5.0.1",
     "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.9.1",
