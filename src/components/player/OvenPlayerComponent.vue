@@ -4,8 +4,8 @@
     <div v-if="streamEnded" class="stream-ended-overlay">
       <div class="ended-content">
         <v-icon icon="mdi-video-off" size="64" color="grey-lighten-1"></v-icon>
-        <h3 class="text-h6 mt-4">Stream Ended</h3>
-        <p class="text-body-2 text-grey-lighten-1">{{ streamName }} is no longer live</p>
+        <h3 class="text-title-large mt-4">Stream Ended</h3>
+        <p class="text-body-medium text-grey-lighten-1">{{ streamName }} is no longer live</p>
       </div>
     </div>
   </div>

@@ -15,13 +15,13 @@
     <v-card>
       <v-card-title class="d-flex align-center pa-4">
         <v-icon icon="mdi-download-network" class="mr-2" color="secondary"></v-icon>
-        <span class="text-h6">Pull Stream</span>
+        <span class="text-title-large">Pull Stream</span>
       </v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text class="pa-4">
-        <p class="text-body-2 mb-4">
+        <p class="text-body-medium mb-4">
           Pull a stream from an external source (RTSP, RTSPS, or OVT). The stream will be ingested and made available for playback.
         </p>
 

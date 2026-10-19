@@ -8,8 +8,8 @@
     <!-- Invalid / expired link -->
     <div v-else-if="streamState === 'not-found'" class="d-flex flex-column align-center justify-center" style="height: calc(100vh - 64px);">
       <v-icon icon="mdi-link-off" size="80" color="grey" class="mb-4"></v-icon>
-      <h2 class="text-h5 mb-2">Link Not Available</h2>
-      <p class="text-body-1 text-grey mb-6">This share link is invalid, has expired, or the stream is not currently live.</p>
+      <h2 class="text-headline-small mb-2">Link Not Available</h2>
+      <p class="text-body-large text-grey mb-6">This share link is invalid, has expired, or the stream is not currently live.</p>
       <v-btn color="primary" variant="flat" @click="router.push('/')">
         <v-icon icon="mdi-arrow-left" start></v-icon>
         Back to Streams
@@ -34,7 +34,7 @@
             <v-icon icon="mdi-circle" size="x-small" class="mr-1"></v-icon>
             LIVE
           </v-chip>
-          <h1 class="text-h6">{{ displayName }}</h1>
+          <h1 class="text-title-large">{{ displayName }}</h1>
           <v-chip
             color="orange"
             size="small"

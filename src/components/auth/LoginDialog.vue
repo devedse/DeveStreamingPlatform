@@ -3,13 +3,13 @@
     <v-card>
       <v-card-title class="d-flex align-center pa-4">
         <v-icon icon="mdi-lock" class="mr-2" color="primary"></v-icon>
-        <span class="text-h6">Login</span>
+        <span class="text-title-large">Login</span>
       </v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text class="pa-4">
-        <p class="text-body-2 mb-4">
+        <p class="text-body-medium mb-4">
           Enter the admin password to access all streams and management features.
         </p>
 

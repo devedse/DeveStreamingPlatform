@@ -63,8 +63,8 @@
     <!-- Empty state -->
     <div v-else class="empty-state">
       <v-icon size="80" color="grey">mdi-television-off</v-icon>
-      <h2 class="text-h5 mt-4">No Streams Selected</h2>
-      <p class="text-body-1 text-grey mt-2">
+      <h2 class="text-headline-small mt-4">No Streams Selected</h2>
+      <p class="text-body-large text-grey mt-2">
         Click the button in the top-right to select streams to watch
       </p>
     </div>
@@ -90,7 +90,7 @@
         <v-card-text class="pa-4">
           <!-- Selection mode buttons -->
           <div class="mb-4">
-            <h3 class="text-subtitle-1 mb-2">Selection Mode</h3>
+            <h3 class="text-title-medium mb-2">Selection Mode</h3>
             <v-btn-toggle
               v-model="tempSelectionMode"
               color="primary"
@@ -146,9 +146,9 @@
 
           <!-- Stream list with checkboxes -->
           <div v-if="availableStreams.length > 0">
-            <h3 class="text-subtitle-1 mb-2">
+            <h3 class="text-title-medium mb-2">
               Available Streams ({{ availableStreams.length }})
-              <span v-if="tempSelectionMode === 'all-except'" class="text-caption text-grey ml-2">
+              <span v-if="tempSelectionMode === 'all-except'" class="text-body-small text-grey ml-2">
                 (Uncheck to exclude)
               </span>
             </h3>
@@ -171,7 +171,7 @@
 
                 <v-list-item-title>
                   {{ stream.name }}
-                  <span v-if="stream.width && stream.height" class="text-caption text-grey ml-2">
+                  <span v-if="stream.width && stream.height" class="text-body-small text-grey ml-2">
                     ({{ stream.width }}x{{ stream.height }})
                   </span>
                 </v-list-item-title>
@@ -189,7 +189,7 @@
           <!-- No streams available -->
           <div v-else class="text-center pa-8">
             <v-icon size="64" color="grey">mdi-video-off</v-icon>
-            <p class="text-body-1 text-grey mt-4">No live streams available</p>
+            <p class="text-body-large text-grey mt-4">No live streams available</p>
           </div>
         </v-card-text>
 

@@ -21,7 +21,7 @@
       <!-- Loading state - only show when there's NO data yet -->
       <div v-if="!stats" class="text-center pa-4">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <p class="text-body-2 text-grey mt-2">Loading statistics...</p>
+        <p class="text-body-medium text-grey mt-2">Loading statistics...</p>
       </div>
 
       <!-- Stats display - show even while refreshing -->
@@ -30,8 +30,8 @@
         <v-card variant="tonal" class="stat-card">
           <v-card-text class="text-center">
             <v-icon icon="mdi-eye" size="large" color="primary" class="mb-2"></v-icon>
-            <div class="text-h4 font-weight-bold">{{ totalViewers }}</div>
-            <div class="text-caption text-grey">
+            <div class="text-headline-large font-weight-bold">{{ totalViewers }}</div>
+            <div class="text-body-small text-grey">
               {{ totalViewers === 1 ? 'Viewer' : 'Viewers' }}
             </div>
           </v-card-text>
@@ -40,13 +40,13 @@
         <!-- Connection breakdown -->
         <v-card variant="tonal" class="stat-card">
           <v-card-text>
-            <div class="text-subtitle-2 mb-3 font-weight-bold">
+            <div class="text-title-small mb-3 font-weight-bold">
               <v-icon icon="mdi-connection" size="small" class="mr-1"></v-icon>
               Connections
             </div>
             <div class="connection-list">
               <div v-for="(count, protocol) in stats.connections" :key="protocol" class="connection-item">
-                <span class="text-caption text-uppercase protocol-name">{{ protocol }}</span>
+                <span class="text-body-small text-uppercase protocol-name">{{ protocol }}</span>
                 <v-chip size="x-small" :color="count > 0 ? 'primary' : 'default'">
                   {{ count }}
                 </v-chip>
@@ -58,33 +58,33 @@
         <!-- Throughput stats -->
         <v-card variant="tonal" class="stat-card">
           <v-card-text>
-            <div class="text-subtitle-2 mb-3 font-weight-bold">
+            <div class="text-title-small mb-3 font-weight-bold">
               <v-icon icon="mdi-speedometer" size="small" class="mr-1"></v-icon>
               Throughput
             </div>
             <div class="throughput-stats">
               <div class="mb-2">
-                <div class="text-caption text-grey">Average In</div>
-                <div class="text-body-2 font-weight-medium">
+                <div class="text-body-small text-grey">Average In</div>
+                <div class="text-body-medium font-weight-medium">
                   {{ formatBitsPerSec(stats.avgThroughputIn) }}
                 </div>
               </div>
               <div class="mb-2">
-                <div class="text-caption text-grey">Average Out</div>
-                <div class="text-body-2 font-weight-medium">
+                <div class="text-body-small text-grey">Average Out</div>
+                <div class="text-body-medium font-weight-medium">
                   {{ formatBitsPerSec(stats.avgThroughputOut) }}
                 </div>
               </div>
               <v-divider class="my-2"></v-divider>
               <div class="mb-2">
-                <div class="text-caption text-grey">Total In</div>
-                <div class="text-body-2 font-weight-medium">
+                <div class="text-body-small text-grey">Total In</div>
+                <div class="text-body-medium font-weight-medium">
                   {{ formatBytes(stats.totalBytesIn) }}
                 </div>
               </div>
               <div>
-                <div class="text-caption text-grey">Total Out</div>
-                <div class="text-body-2 font-weight-medium">
+                <div class="text-body-small text-grey">Total Out</div>
+                <div class="text-body-medium font-weight-medium">
                   {{ formatBytes(stats.totalBytesOut) }}
                 </div>
               </div>
@@ -95,18 +95,18 @@
         <!-- Stream info -->
         <v-card variant="tonal" class="stat-card">
           <v-card-text>
-            <div class="text-subtitle-2 mb-3 font-weight-bold">
+            <div class="text-title-small mb-3 font-weight-bold">
               <v-icon icon="mdi-information" size="small" class="mr-1"></v-icon>
               Stream Info
             </div>
             <div class="stream-info">
               <div class="mb-2">
-                <div class="text-caption text-grey">Created</div>
-                <div class="text-body-2">{{ formatTime(stats.createdTime) }}</div>
+                <div class="text-body-small text-grey">Created</div>
+                <div class="text-body-medium">{{ formatTime(stats.createdTime) }}</div>
               </div>
               <div class="mb-2">
-                <div class="text-caption text-grey">Total Connections</div>
-                <div class="text-body-2 font-weight-medium">{{ stats.totalConnections }}</div>
+                <div class="text-body-small text-grey">Total Connections</div>
+                <div class="text-body-medium font-weight-medium">{{ stats.totalConnections }}</div>
               </div>
             </div>
           </v-card-text>
@@ -116,7 +116,7 @@
       <!-- Error/Empty state -->
       <div v-if="!stats" class="text-center pa-4">
         <v-icon icon="mdi-alert-circle" size="large" color="grey"></v-icon>
-        <p class="text-body-2 text-grey mt-2">No statistics available</p>
+        <p class="text-body-medium text-grey mt-2">No statistics available</p>
       </div>
     </v-card-text>
   </v-card>

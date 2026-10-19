@@ -21,7 +21,7 @@
       <!-- Loading state -->
       <div v-if="loading && !recordingState" class="text-center pa-4">
         <v-progress-circular indeterminate color="primary"></v-progress-circular>
-        <p class="text-body-2 text-grey mt-2">Loading recording status...</p>
+        <p class="text-body-medium text-grey mt-2">Loading recording status...</p>
       </div>
 
       <!-- Recording state display -->
@@ -63,7 +63,7 @@
                   <div class="font-weight-medium">{{ item.raw.displayName }}</div>
                 </template>
                 <template v-slot:subtitle>
-                  <div class="text-caption">{{ item.raw.description }}</div>
+                  <div class="text-body-small">{{ item.raw.description }}</div>
                 </template>
               </v-list-item>
             </template>
@@ -81,15 +81,15 @@
         <!-- Recording details (when recording) -->
         <div v-if="recordingState" class="recording-details mb-4">
           <div class="detail-item">
-            <span class="text-caption text-grey">Recording ID:</span>
-            <span class="text-body-2 font-weight-medium">{{ recordingState.id }}</span>
+            <span class="text-body-small text-grey">Recording ID:</span>
+            <span class="text-body-medium font-weight-medium">{{ recordingState.id }}</span>
           </div>
           <div class="detail-item">
-            <span class="text-caption text-grey">Started:</span>
-            <span class="text-body-2">{{ formatTime(recordingState.createdTime) }}</span>
+            <span class="text-body-small text-grey">Started:</span>
+            <span class="text-body-medium">{{ formatTime(recordingState.createdTime) }}</span>
           </div>
           <div v-if="recordingState.stream.variantNames?.length > 0" class="detail-item">
-            <span class="text-caption text-grey">Variants:</span>
+            <span class="text-body-small text-grey">Variants:</span>
             <div class="d-flex flex-wrap gap-1 mt-1">
               <v-chip
                 v-for="variant in recordingState.stream.variantNames"
@@ -103,8 +103,8 @@
             </div>
           </div>
           <div v-if="recordingState.filePath" class="detail-item">
-            <span class="text-caption text-grey">File:</span>
-            <span class="text-body-2 mono-text">{{ recordingState.filePath }}</span>
+            <span class="text-body-small text-grey">File:</span>
+            <span class="text-body-medium mono-text">{{ recordingState.filePath }}</span>
           </div>
         </div>
 

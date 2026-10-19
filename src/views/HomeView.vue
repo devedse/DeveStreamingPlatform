@@ -3,11 +3,11 @@
     <!-- Page header -->
     <div class="d-flex justify-space-between align-center mb-6">
       <div>
-        <h1 class="text-h4 font-weight-bold mb-2">
+        <h1 class="text-headline-large font-weight-bold mb-2">
           <v-icon icon="mdi-television-play" color="primary" class="mr-2"></v-icon>
           Live Streams
         </h1>
-        <p class="text-body-1 text-grey">
+        <p class="text-body-large text-grey">
           {{ authStore.isAuthenticated ? 'Browse and manage all live streams' : 'Browse public live streams' }}
         </p>
       </div>
@@ -36,10 +36,10 @@
       <v-divider class="my-6" />
       <div class="d-flex align-center mb-4">
         <v-icon icon="mdi-alert-circle" color="warning" class="mr-2" />
-        <h2 class="text-h5 font-weight-medium">Inactive Stream Endpoints</h2>
+        <h2 class="text-headline-small font-weight-medium">Inactive Stream Endpoints</h2>
         <v-chip color="warning" size="small" class="ml-3">{{ inactiveEndpoints.length }}</v-chip>
       </div>
-      <p class="text-body-2 text-grey mb-4">
+      <p class="text-body-medium text-grey mb-4">
         These public or unlisted endpoints have no live source stream. Delete endpoints that are no longer needed.
       </p>
       <v-row>

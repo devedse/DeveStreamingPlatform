@@ -14,8 +14,8 @@
     </v-card-title>
 
     <v-card-text>
-      <p class="text-body-2 text-grey mb-2">The source stream is no longer live.</p>
-      <p class="text-caption text-grey-darken-1 text-truncate" :title="endpoint.channelName">
+      <p class="text-body-medium text-grey mb-2">The source stream is no longer live.</p>
+      <p class="text-body-small text-grey-darken-1 text-truncate" :title="endpoint.channelName">
         Channel: {{ endpoint.channelName }}
       </p>
       <v-alert v-if="deleteError" type="error" variant="tonal" density="compact" class="mt-3">

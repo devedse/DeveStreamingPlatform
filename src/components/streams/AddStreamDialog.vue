@@ -14,13 +14,13 @@
     <v-card>
       <v-card-title class="d-flex align-center pa-4">
         <v-icon icon="mdi-video-plus" class="mr-2" color="primary"></v-icon>
-        <span class="text-h6">Add New Stream</span>
+        <span class="text-title-large">Add New Stream</span>
       </v-card-title>
 
       <v-divider></v-divider>
 
       <v-card-text class="pa-4">
-        <p class="text-body-2 mb-4">
+        <p class="text-body-medium mb-4">
           Enter a stream name below to get your streaming URLs for OBS or other broadcasting software.
         </p>
 
@@ -40,9 +40,9 @@
         <div class="mt-6">
           <div class="d-flex align-center gap-2 mb-2">
             <v-icon icon="mdi-monitor-share" color="primary"></v-icon>
-            <span class="text-subtitle-1 font-weight-medium">Configuring OBS</span>
+            <span class="text-title-medium font-weight-medium">Configuring OBS</span>
           </div>
-          <div class="text-body-2 text-grey mb-3">
+          <div class="text-body-medium text-grey mb-3">
             Choose the encoder you use below to view the recommended OBS configuration screenshot.
           </div>
           <div class="d-flex flex-wrap gap-2">
@@ -70,7 +70,7 @@
           <div v-if="shouldShowUrls" class="mt-4">
             <v-divider class="mb-4"></v-divider>
 
-            <h3 class="text-subtitle-1 mb-3 font-weight-bold">
+            <h3 class="text-title-medium mb-3 font-weight-bold">
               <v-icon icon="mdi-broadcast" class="mr-2" color="primary"></v-icon>
               Your Streaming URLs:
             </h3>
@@ -79,7 +79,7 @@
             <div class="url-section mb-3">
               <div class="d-flex align-center mb-2">
                 <v-chip size="small" color="primary" variant="flat" class="mr-2">SRT</v-chip>
-                <span class="text-caption text-grey">Recommended for best quality</span>
+                <span class="text-body-small text-grey">Recommended for best quality</span>
               </div>
               <v-text-field
                 :model-value="urls.srt"
@@ -103,7 +103,7 @@
             <div class="url-section mb-3">
               <div class="d-flex align-center mb-2">
                 <v-chip size="small" color="secondary" variant="flat" class="mr-2">RTMP</v-chip>
-                <span class="text-caption text-grey">Standard streaming protocol</span>
+                <span class="text-body-small text-grey">Standard streaming protocol</span>
               </div>
               <v-text-field
                 :model-value="urls.rtmp"
@@ -146,7 +146,7 @@
             <div class="url-section mb-3">
               <div class="d-flex align-center mb-2">
                 <v-chip size="small" color="info" variant="flat" class="mr-2">WebRTC Ingest</v-chip>
-                <span class="text-caption text-grey">Self-defined signaling protocol</span>
+                <span class="text-body-small text-grey">Self-defined signaling protocol</span>
               </div>
               <v-text-field
                 :model-value="urls.webrtc"
@@ -170,7 +170,7 @@
             <div class="url-section mb-3">
               <div class="d-flex align-center mb-2">
                 <v-chip size="small" color="success" variant="flat" class="mr-2">WHIP</v-chip>
-                <span class="text-caption text-grey">WebRTC HTTP Ingest Protocol</span>
+                <span class="text-body-small text-grey">WebRTC HTTP Ingest Protocol</span>
               </div>
               <v-text-field
                 :model-value="urls.whip"
@@ -231,8 +231,8 @@
       <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
           <div>
-            <div class="text-subtitle-1 font-weight-bold">{{ previewGuide?.label }}</div>
-            <div class="text-caption text-grey">{{ previewGuide?.description }}</div>
+            <div class="text-title-medium font-weight-bold">{{ previewGuide?.label }}</div>
+            <div class="text-body-small text-grey">{{ previewGuide?.description }}</div>
           </div>
           <v-btn icon="mdi-close" variant="text" @click="closePreview"></v-btn>
         </v-card-title>

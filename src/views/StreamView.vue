@@ -7,8 +7,8 @@
 
     <div v-else-if="streamAccessible === false" class="d-flex flex-column align-center justify-center" style="height: calc(100vh - 64px);">
       <v-icon icon="mdi-lock" size="80" color="grey" class="mb-4"></v-icon>
-      <h2 class="text-h5 mb-2">Stream Not Available</h2>
-      <p class="text-body-1 text-grey mb-6">This stream is private or does not exist. Login to access all streams.</p>
+      <h2 class="text-headline-small mb-2">Stream Not Available</h2>
+      <p class="text-body-large text-grey mb-6">This stream is private or does not exist. Login to access all streams.</p>
       <v-btn color="primary" variant="flat" @click="router.push('/')">
         <v-icon icon="mdi-arrow-left" start></v-icon>
         Back to Streams
@@ -33,7 +33,7 @@
             <v-icon icon="mdi-circle" size="x-small" class="mr-1"></v-icon>
             LIVE
           </v-chip>
-          <h1 class="text-h6">{{ streamName }}</h1>
+          <h1 class="text-title-large">{{ streamName }}</h1>
           <!-- Public badge -->
           <v-chip
             v-if="isPublicStream"
@@ -85,12 +85,12 @@
             <!-- Public/Private visibility toggle -->
             <div class="mt-4">
               <v-card elevation="2">
-                <v-card-title class="text-subtitle-1">
+                <v-card-title class="text-title-medium">
                   <v-icon :icon="currentStream?.isPublic ? 'mdi-earth' : 'mdi-earth-off'" start :color="currentStream?.isPublic ? 'success' : 'grey'"></v-icon>
                   Stream Visibility
                 </v-card-title>
                 <v-card-text>
-                  <p class="text-body-2 mb-3">
+                  <p class="text-body-medium mb-3">
                     {{ currentStream?.isPublic ? 'This stream is visible to everyone without login.' : 'This stream is private and requires login to view.' }}
                   </p>
                   <v-btn
@@ -110,12 +110,12 @@
             <!-- Unlisted share link -->
             <div class="mt-4">
               <v-card elevation="2">
-                <v-card-title class="text-subtitle-1">
+                <v-card-title class="text-title-medium">
                   <v-icon :icon="currentStream?.isUnlisted ? 'mdi-link-lock' : 'mdi-link-off'" start :color="currentStream?.isUnlisted ? 'orange' : 'grey'"></v-icon>
                   Unlisted Share Link
                 </v-card-title>
                 <v-card-text>
-                  <p class="text-body-2 mb-3">
+                  <p class="text-body-medium mb-3">
                     {{ currentStream?.isUnlisted
                       ? 'Anyone with the link below can watch this stream without logging in.'
                       : 'Create a secret share link so anyone with it can watch — without it appearing publicly.' }}
@@ -188,12 +188,12 @@
             <!-- Stop pulling stream button -->
             <div v-if="isPulledStream" class="mt-4">
               <v-card elevation="2">
-                <v-card-title class="text-subtitle-1">
+                <v-card-title class="text-title-medium">
                   <v-icon icon="mdi-download-network" start color="secondary"></v-icon>
                   Pulled Stream
                 </v-card-title>
                 <v-card-text>
-                  <p class="text-body-2 mb-3">
+                  <p class="text-body-medium mb-3">
                     This stream is being pulled from an external source.
                   </p>
                   <v-btn
@@ -216,13 +216,13 @@
       <!-- Confirmation dialog -->
       <v-dialog v-model="showStopDialog" max-width="450">
         <v-card>
-          <v-card-title class="text-h6">
+          <v-card-title class="text-title-large">
             <v-icon icon="mdi-alert" color="error" class="mr-2"></v-icon>
             Stop Pulling Stream?
           </v-card-title>
           <v-card-text>
             <p>Are you sure you want to stop pulling <strong>{{ streamName }}</strong>?</p>
-            <p class="text-body-2 text-grey mt-2">This will terminate the stream and disconnect all viewers.</p>
+            <p class="text-body-medium text-grey mt-2">This will terminate the stream and disconnect all viewers.</p>
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>

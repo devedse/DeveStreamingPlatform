@@ -4,7 +4,7 @@
       <router-link to="/" style="text-decoration: none; color: inherit;">
         <div class="d-flex align-center">
           <img src="/DeveStreamingPlatform.png" alt="Deve Streaming Platform" class="mr-2" style="height: 32px; width: 32px;" />
-          <span class="text-h6 font-weight-bold">Deve Streaming Platform</span>
+          <span class="text-title-large font-weight-bold">Deve Streaming Platform</span>
         </div>
       </router-link>
     </v-app-bar-title>
