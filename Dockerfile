@@ -9,8 +9,11 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Keep the container package manager aligned with CI and the lockfile format.
-RUN npm install -g pnpm@10 && pnpm install --frozen-lockfile
+# Keep pnpm aligned with CI, then remove the unused npm bootstrap tool.
+RUN apk upgrade --no-cache && \
+    npm install -g pnpm@10 && \
+    npm uninstall -g npm && \
+    pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -21,6 +24,9 @@ RUN echo "Building version: ${BUILD_VERSION}" && \
 
 # Production stage
 FROM nginx:alpine
+
+# Apply distribution security fixes that may not yet be in the base image.
+RUN apk upgrade --no-cache
 
 # Copy built files from build stage
 COPY --from=build /app/dist /usr/share/nginx/html

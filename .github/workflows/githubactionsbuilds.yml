@@ -31,6 +31,8 @@ jobs:
         cache: 'pnpm'
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
+    - name: Audit dependencies
+      run: pnpm audit --audit-level=moderate
     - name: Build
       run: pnpm run build
     - name: Run tests
@@ -83,7 +85,7 @@ jobs:
         fi
     - name: Run Buildx
       run: |
-        docker buildx build -f Dockerfile --build-arg BUILD_VERSION=${{steps.tags.outputs.version}} --platform linux/arm64,linux/amd64 ${{steps.tags.outputs.tags}} ${{ (github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && '--push' || '' }} .
+        docker buildx build --pull --no-cache -f Dockerfile --build-arg BUILD_VERSION=${{steps.tags.outputs.version}} --platform linux/arm64,linux/amd64 ${{steps.tags.outputs.tags}} ${{ (github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && '--push' || '' }} .
 
   release_github:
     permissions:
